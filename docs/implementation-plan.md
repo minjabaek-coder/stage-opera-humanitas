@@ -5,7 +5,7 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 각 항목 옆 체크박스는 **구현 완료** 여부 — 코드가 들어가고 dev 환경에서 동작이 확인됐을 때만 체크.
 설계 결정의 *근거*는 [./decisions.md](./decisions.md), 변하지 않는 *요구사항*은 [./PRD.md](./PRD.md)를 본다.
 
-> **현재 상태 (2026-05-18 기준):** Phase 1A ✅, 1B ✅, **1C 전체 완료 (C1 인증 + C2 관리자 UI 3종 + C3 관리자 API + C4 Vercel Cron)** 까지 완료. 다음 진입점은 **Phase 1D 배포 준비** (Vercel 프로젝트 연결, 환경변수 입력, 도메인, §10 미해결 항목 확인, §11 인수 기준 점검).
+> **현재 상태 (2026-05-18 기준):** Phase 1A/1B/1C 전체 완료 + **Phase 1D 코드 영역 완료** (PRD §11 인수 기준 9/11 + 동시 신청 부하 테스트 통과, mobile/desktop viewport 확인, 정리 SQL 작성). 남은 1D 항목은 모두 **운영자 결정/외부 시스템 작업**: PRD §10 미해결 항목 확정 + Vercel 프로젝트 import + env vars 입력 + 도메인 연결 + cleanup-pre-deploy.sql 실행 + §11-10(실기기 모바일/PC 브라우저 매트릭스). 배포 가이드 README 가 다음 진입점.
 
 ---
 
@@ -114,7 +114,13 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 - [x] `PUT /api/admin/programs/[id]` — 회차별 정원 (PRD §3.7 분리 저장 UI 와 정합). 현재 활성 좌석 미만으로 축소 금지.
 - [x] 모든 변경 액션은 `admin_audit_log` 기록
 
-> **검증 부수효과:** Playwright 검증 과정에서 `OH-2026-0001` (program=I) + `OH-2026-0002` (program=II, C2-2) + `OH-2026-0003` (program=III, C2-3 capacity floor 가드) + `OH-2026-0004` (program=IV, C4 cron expiry — `cancel_reason='expired'`) 가 모두 `cancelled` 상태로 남았고, `admin_audit_log` 에 검증 액션이 누적됐다. Phase 1D 배포 직전에 일괄 정리: `DELETE FROM opera_humanitas.registrations WHERE reference_no LIKE 'OH-2026-%' AND name = '테스트신청자';` + `TRUNCATE opera_humanitas.admin_audit_log;` (+ reference seq 리셋도 함께 고려).
+> **검증 부수효과:** Playwright/Node 검증 과정에서 `OH-2026-0001` ~ `OH-2026-0006` 이 모두 `cancelled` 상태로 남았고, `admin_audit_log` 에 검증 액션이 누적됐다. Phase 1D 진입 시점에 정리 SQL 스크립트로 떨어뜨림: [`supabase/cleanup-pre-deploy.sql`](../supabase/cleanup-pre-deploy.sql) (test row 삭제 + audit log truncate + reference seq restart).
+> - 0001: C1/C3
+> - 0002: C2-2 승인→취소
+> - 0003: C2-3 capacity floor 가드
+> - 0004: C4 cron expiry (`cancel_reason='expired'`)
+> - 0005: 1D 동시 신청 부하 테스트 승자
+> - 0006: 1D SOLD OUT 표시 검증
 
 ### C4. Vercel Cron (PRD §5.3)  (✅ 완료 / 커밋 `94d63fe`)
 - [x] `POST /api/cron/expire-pending` — `Bearer ${CRON_SECRET}` timing-safe 검증 + `expire_pending_registrations()` RPC 호출. CRON_SECRET 미설정 시 500 fail-loud
@@ -126,10 +132,49 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 
 ## Phase 1D — 배포
 
-- [ ] Vercel 프로젝트 연결 + 환경 변수 입력
-- [ ] 도메인 결정 + 연결
-- [ ] PRD §10 "미해결 항목" 운영자 확인 — 실제 계좌번호, 약관 최종본, 관리자 비밀번호 등
-- [ ] PRD §11 인수 기준 전체 점검
+### D1. PRD §11 인수 기준 점검 (커밋 TBD)
+
+| # | 항목 | 결과 | 검증 위치 |
+|---|---|---|---|
+| 1 | 랜딩 6개 Apply 버튼 → 의도 회차로 사전 체크된 신청 페이지 | ✅ | Playwright sweep (`?program=1,3` → I·III만 체크됨) |
+| 2 | 회차 체크 시 가격 실시간 갱신 | ✅ | sweep (60,000 → 90,000) |
+| 3 | 매진 회차 비활성·SOLD OUT 표시 | ✅ | sweep (cap=1 + pending 1건 setup → II 카드 `is-disabled` + "SOLD OUT" + disabled checkbox) |
+| 4 | 동일 이메일/회차 중복 시 에러 | ✅ | Phase 1B B6 OH002 |
+| 5 | 신청 완료 페이지 — 계좌·금액·기한 | ✅ | Phase 1B B5 |
+| 6 | 48h+1h 이내 미입금 자동 cancelled | ✅ | Phase 1C C4 cron expiry — backdate 후 `{expired_count:1}` |
+| 7 | 관리자 승인 → confirmed + 잔여 좌석 반영 | ✅ | Phase 1C C2-2 |
+| 8 | 관리자 취소 → 좌석 회복 | ✅ | Phase 1C C2-2 |
+| 9 | 잘못된 비밀번호 → 접근 불가 | ✅ | Phase 1C C1 |
+| 10 | 모바일/PC 실기기 브라우저 매트릭스 (iPhone Safari, Android Chrome, Chrome PC, Safari PC) | ⏳ 운영자 검증 | Playwright 390×844/1440×900 viewport 만 확인 — 랜딩/신청/관리자 모두 레이아웃 OK |
+| 11 | 마지막 1석에 2건 동시 INSERT → 정확히 1건만 성공 | ✅ | Phase 1D Node burst test — A 201 / B 409 OH001 (`create_registration` RPC row-locking) |
+
+### D2. 배포 직전 정리 SQL  (✅ 작성 완료 / 커밋 TBD)
+- [x] [`supabase/cleanup-pre-deploy.sql`](../supabase/cleanup-pre-deploy.sql) — `테스트신청자` row 삭제 + `admin_audit_log` truncate + `reference_no` 시퀀스 restart
+- [x] `supabase/migrations/README.md` 에 적용 안내 추가
+- [ ] **운영자 작업**: 운영 데이터 들어오기 전에 Supabase SQL Editor 에서 한 번만 실행
+
+### D3. 운영자 결정 (PRD §10)
+배포 전 운영자가 직접 결정해 채워야 하는 항목들:
+- [ ] 실제 입금 계좌번호 → `/admin/settings` 에서 입력
+- [ ] 관리자 비밀번호 → Vercel env `ADMIN_PASSWORD` 로 운영 값 입력
+- [ ] 도메인 결정 (서브도메인 사용 여부 포함)
+- [ ] 약관 문구 최종본 (변호사 검토) — 신청 폼 동의 영역 및 `/apply` 약관 모달
+- [ ] 환불 규정 세부 조건 (약관 확정 시)
+- [ ] 신청 페이지 메타 태그 / OG 이미지 (마케팅 시작 전)
+- [ ] 개인정보 처리방침 별도 페이지 필요 여부 (법적 검토 후)
+
+### D4. Vercel 프로젝트 + 환경변수 + 도메인 (운영자 작업)
+- [ ] Vercel 에 GitHub repo 연결 + 첫 배포
+- [ ] 환경변수 입력 (운영 값으로 — `.env.example` 참조):
+  - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+  - `ADMIN_PASSWORD`, `ADMIN_JWT_SECRET` (32자 이상 랜덤)
+  - `CRON_SECRET` (충분히 긴 랜덤)
+- [ ] 도메인 연결 + DNS 설정
+- [ ] Vercel Cron 활성화 확인 (`vercel.json` 자동 인식)
+- [ ] 운영 첫 신청 한 건 통과시켜 입금 안내 + cron 동작 모니터링
+
+### D5. 배포 가이드 README (다음 세션)
+- [ ] 위 D2/D3/D4 항목을 운영자가 따라갈 수 있는 단일 문서로 정리
 
 ---
 

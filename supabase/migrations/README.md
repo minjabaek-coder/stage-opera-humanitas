@@ -35,6 +35,13 @@ select id, code, scheduled_at, capacity, price from opera_humanitas.programs ord
 select opera_humanitas.expire_pending_registrations();
 ```
 
+## 배포 직전 정리 SQL
+
+운영 데이터가 들어오기 **전에** 한 번만 실행: [`../cleanup-pre-deploy.sql`](../cleanup-pre-deploy.sql)
+Phase 1A~1D 검증 과정에서 누적된 `테스트신청자` row 와 `admin_audit_log` 를 비우고
+`reference_no` 시퀀스를 1 부터 다시 시작한다. 운영 신청이 한 건이라도 들어왔다면 이 스크립트는
+사용하지 말 것 (조건절이 너무 광범위해 운영 데이터까지 휩쓸 위험).
+
 ## 새 migration을 추가할 때
 
 - 파일명은 4자리 zero-padded 순번 + snake_case (`0004_add_xxx.sql`).
