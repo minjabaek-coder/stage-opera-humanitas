@@ -5,7 +5,7 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 각 항목 옆 체크박스는 **구현 완료** 여부 — 코드가 들어가고 dev 환경에서 동작이 확인됐을 때만 체크.
 설계 결정의 *근거*는 [./decisions.md](./decisions.md), 변하지 않는 *요구사항*은 [./PRD.md](./PRD.md)를 본다.
 
-> **현재 상태 (2026-05-18 기준):** Phase 1A ✅, 1B ✅, **1C 부분 — C1 인증 ✅ + C3 관리자 API ✅ + C2-1 대시보드 ✅ + C2-2 신청 목록 ✅** 까지 완료. 다음 진입점은 **§C2-3 `/admin/settings`** → §C4 Vercel Cron.
+> **현재 상태 (2026-05-18 기준):** Phase 1A ✅, 1B ✅, **1C 부분 — C1 인증 ✅ + C2 관리자 UI 3종 ✅ + C3 관리자 API ✅** 까지 완료. 다음 진입점은 **§C4 Vercel Cron** → Phase 1D 배포 준비.
 
 ---
 
@@ -96,7 +96,11 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
   - 상세 모달: ESC 닫기, 모든 필드 + 동의 3종 표시, 승인(2단계 confirm) / 취소(사유 textarea, 200자) 액션. API 응답 후 `router.refresh()` → 목록과 모달 상태 동기화 (다음 상태로 빠진 row 는 자동으로 모달 닫힘)
   - 엑셀 다운로드 링크 → `/api/admin/registrations/export`
   - React 19 권장 패턴(렌더 중 prev props 비교 후 setState)으로 외부 URL/items 변화 동기화 — `useEffect+setState` 안티패턴 회피 (lint 강제)
-- [ ] `/admin/settings` — 계좌/홀드 시간/회차 정원 편집
+- [x] `/admin/settings` — 계좌/홀드 시간/회차 정원 편집 (커밋 `92b1ceb`)
+  - 서버 컴포넌트 `page.tsx` 가 `settings`(id=1) + `programs` + `program_availability` 를 병렬 조회. 활성 좌석(confirmed+active pending)을 회차별로 합산해 UI 에 노출 → capacity floor 가드(서버 가드 `CAPACITY_TOO_LOW` 와 일관) 를 사용자가 미리 안내받음
+  - `SettingsClient.tsx` 안에 3개 sub-form (입금 정보 / 예약 정책 / 회차별 정원) — 각자 dirty 추적 + 자체 [저장] 버튼 + 자체 상태 토스트(`저장 중… / 저장됨 / 에러 메시지`, 1.8s 후 idle). 회차별 정원은 4개 행 각각 별도 폼/저장 버튼
+  - `useSubmit()` 훅으로 fetch + router.refresh + status state 머신 (idle/saving/saved/error) 공통화
+  - capacity 입력 `min` 을 `Math.max(1, active_count)` 로 잡고, valid 가 깨지면 저장 비활성 + hint 빨강 — 활성 1석에서 0으로 줄이려 시도 시 즉시 차단됨 (E2E 검증)
 
 ### C3. 관리자 API (PRD §5.2)  (✅ 완료 / 커밋 `969b489`)
 - [x] `src/lib/audit.ts` — `recordAdminAction({ action, target_id, payload })` (실패는 throw 안 함)
@@ -110,7 +114,7 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 - [x] `PUT /api/admin/programs/[id]` — 회차별 정원 (PRD §3.7 분리 저장 UI 와 정합). 현재 활성 좌석 미만으로 축소 금지.
 - [x] 모든 변경 액션은 `admin_audit_log` 기록
 
-> **검증 부수효과:** Playwright 검증 과정에서 `OH-2026-0001` (program=I) + `OH-2026-0002` (program=II, C2-2 검증 시 추가) 가 모두 `cancelled` 상태로 남았고, `admin_audit_log` 에 검증 액션이 누적됐다. Phase 1D 배포 직전에 일괄 정리: `DELETE FROM opera_humanitas.registrations WHERE reference_no LIKE 'OH-2026-%' AND name = '테스트신청자';` + `TRUNCATE opera_humanitas.admin_audit_log;` (+ reference seq 리셋도 함께 고려).
+> **검증 부수효과:** Playwright 검증 과정에서 `OH-2026-0001` (program=I) + `OH-2026-0002` (program=II, C2-2) + `OH-2026-0003` (program=III, C2-3 capacity floor 가드 확인용) 가 모두 `cancelled` 상태로 남았고, `admin_audit_log` 에 검증 액션이 누적됐다. Phase 1D 배포 직전에 일괄 정리: `DELETE FROM opera_humanitas.registrations WHERE reference_no LIKE 'OH-2026-%' AND name = '테스트신청자';` + `TRUNCATE opera_humanitas.admin_audit_log;` (+ reference seq 리셋도 함께 고려).
 
 ### C4. Vercel Cron (PRD §5.3)
 - [ ] `POST /api/cron/expire-pending` — `Bearer ${CRON_SECRET}` 검증 + `expire_pending_registrations()` 호출
