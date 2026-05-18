@@ -20,7 +20,7 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 
 ---
 
-## Phase 1B — 데이터 베이스 + 신청 흐름
+## Phase 1B — 데이터 베이스 + 신청 흐름 (✅ 완료 / 커밋 `02a763f`)
 
 ### B1. Supabase 스키마 + 시드  (✅ 완료)
 - [x] `supabase/migrations/0001_init.sql` — `opera_humanitas` schema + `programs`, `registrations`, `registration_items`, `settings`, `admin_audit_log` (PRD §4.2, ADR-007)

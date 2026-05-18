@@ -12,7 +12,8 @@ Supabase Dashboard > **SQL Editor** 에서 다음 파일을 순서대로 붙여�
 | 1 | [`0001_init.sql`](./0001_init.sql) | §4.1 / §4.2 | schema 생성, 5개 테이블 + 인덱스 + trigger, sequence, 권한·default privileges |
 | 2 | [`0002_views_and_fns.sql`](./0002_views_and_fns.sql) | §4.4 / §5.1 / §6.5 | `program_availability` 뷰, `expire_pending_registrations()`, `create_registration()` RPC |
 | 3 | [`0003_rls.sql`](./0003_rls.sql) | §4.5 | RLS 정책 (public SELECT 허용 범위 외에는 차단) |
-| 4 | [`../seed.sql`](../seed.sql) | §4.3 | 4개 회차 + settings 1행 |
+| 4 | [`0004_fix_create_registration.sql`](./0004_fix_create_registration.sql) | §5.1 / §6.5 | `create_registration` 함수의 `id` 컬럼 ↔ 리턴 변수 ambiguity(SQLSTATE 42702) 해결 — `#variable_conflict use_column` 디렉티브 |
+| 5 | [`../seed.sql`](../seed.sql) | §4.3 | 4개 회차 + settings 1행 |
 
 ## 적용 후 Dashboard에서 1회만 설정
 
