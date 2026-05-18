@@ -42,3 +42,6 @@ next-env.d.ts
 
 # claude code local context (PRD copies, source assets, screenshots)
 .claude/
+
+# playwright mcp local snapshots/logs from browser testing
+.playwright-mcp/

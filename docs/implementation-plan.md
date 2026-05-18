@@ -70,11 +70,13 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 
 ## Phase 1C — 관리자 + Cron
 
-### C1. 관리자 인증
-- [ ] `POST /api/admin/login` — 환경변수 비밀번호 검증 → HttpOnly JWT 쿠키 12h (PRD §5.2)
-- [ ] `POST /api/admin/logout`
-- [ ] `src/middleware.ts` — `/admin/*` 및 `/api/admin/*` 보호
-- [ ] `src/app/admin/page.tsx` — 단일 비밀번호 입력 폼
+### C1. 관리자 인증  (✅ 완료)
+- [x] `src/lib/auth/admin.ts` — `jose` 기반 HS256 JWT 발급/검증 + 쿠키 이름·만료 상수 (Edge 호환)
+- [x] `POST /api/admin/login` — Zod 검증 → timing-safe 비밀번호 비교 → HttpOnly Secure SameSite=Strict 쿠키 12h
+- [x] `POST /api/admin/logout` — 쿠키 Max-Age=0
+- [x] `src/proxy.ts` — `/admin/*` 및 `/api/admin/*` 보호 (PRD §6.2 의 `middleware.ts` 는 Next.js 16 에서 `proxy.ts` 로 rename, ADR-008). `/admin` 및 `/api/admin/login` 통과, 인증 상태로 `/admin` 진입 시 `/admin/dashboard` 로 redirect
+- [x] `src/app/admin/page.tsx` + `AdminLoginClient.tsx` — 단일 비밀번호 입력 폼 (다크 톤, `noindex`)
+- [x] `globals.css` — `.admin-login__*` 디자인 토큰 기반 스타일
 
 ### C2. 관리자 페이지 (PRD §3.5–3.7)
 - [ ] `/admin/dashboard` — 회차별 잔여 좌석, 입금 대기 카운트, 곧 만료 카운트

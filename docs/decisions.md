@@ -58,3 +58,10 @@ PRD([./PRD.md](./PRD.md))에서 **의도적으로 벗어난 결정**만 기록�
 - **Decision:** 모든 신규 객체(테이블 5종, 뷰 1종, 함수 3종, 시퀀스 1종)는 `create schema if not exists opera_humanitas` 안에 만든다. `public` schema는 건드리지 않음. `gen_random_uuid()`는 `extensions.gen_random_uuid()`로 schema-qualify. 마이그레이션 적용 후 Dashboard > API > Exposed schemas 에 `opera_humanitas` 를 1회 추가해야 PostgREST가 접근 가능. 클라이언트는 `createClient(..., { db: { schema: 'opera_humanitas' } })` 로 기본 스키마를 고정 (`src/lib/supabase/anon.ts`, `server.ts`).
 - **Why:** (1) **이름 충돌 0**: 다른 서비스가 `programs`/`registrations` 같은 흔한 이름을 써도 무관. (2) **권한 격리**: schema 단위로 `grant usage` 와 RLS를 끊을 수 있어, 다른 서비스의 anon 키가 PII 가 들어가는 `opera_humanitas.registrations` 를 보지 못함. (3) **분리 비용이 낮음**: 나중에 별도 프로젝트로 옮기려면 `pg_dump --schema=opera_humanitas` 한 번이면 됨. 대안인 `oh_` 프리픽스는 anon 키를 한 풀에서 공유하기 때문에 다른 서비스의 RLS 디폴트 실수가 이쪽 PII로 새어나갈 위험이 있다.
 - **Reversal cost:** 중간. Dashboard 설정 한 번과 클라이언트 코드 한 줄이 비용의 전부지만, 일단 데이터가 쌓이면 다른 서비스로 옮길 때 외래키/뷰 재배선이 필요. 그래도 schema 단위 dump/restore가 가능하다는 점에서 prefix 방식 회수보다 훨씬 깔끔.
+
+## ADR-008 · PRD의 `middleware.ts` → **`proxy.ts`** 로 채택 (2026-05-18)
+
+- **Context:** PRD §6.2 는 `/middleware.ts` 가 `/admin/*` 를 보호하는 구조. Next.js 16 에서 file convention 이 `middleware` → `proxy` 로 rename 되었고 (`node_modules/next/dist/docs/01-app/01-getting-started/16-proxy.md`), `middleware.ts` 사용은 deprecated.
+- **Decision:** 16의 새 이름 `proxy.ts` 를 그대로 따른다. 파일 위치는 `src/proxy.ts` (app router 와 동일 레벨). 기능·matcher 문법은 동일.
+- **Why:** rename 만이고 기능 동일. deprecated 이름을 쓰면 빌드 경고가 나오거나 향후 메이저에서 깨질 위험. PRD 표기는 14+ 기준이고, ADR-001 에서 16 채택한 이상 자연스러운 정합.
+- **Reversal cost:** 낮음. 14 로 내려갈 경우 `proxy.ts` 를 `middleware.ts` 로 rename 하면 됨.
