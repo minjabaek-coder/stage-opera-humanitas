@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { PROGRAMS, type Program, type ProgramAvailability } from "@/data/programs";
 import { useOperaPlayer } from "./useOperaPlayer";
 
@@ -24,6 +25,40 @@ export function Series({ availability }: Props) {
   const { play, playingKey } = useOperaPlayer();
   const byId = new Map(availability.map((a) => [a.programId, a] as const));
 
+  // Row reveal lives in React state — without this, the global RevealObserver
+  // adds `in` via classList.add, but the next re-render (e.g. play toggle)
+  // overwrites className and strips it, leaving the row at opacity:0.
+  const rowRefs = useRef<Map<number, HTMLElement | null>>(new Map());
+  const [revealed, setRevealed] = useState<Set<number>>(new Set());
+  useEffect(() => {
+    if (!("IntersectionObserver" in window)) {
+      queueMicrotask(() => setRevealed(new Set(PROGRAMS.map((p) => p.id))));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        const ids: number[] = [];
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const id = Number((entry.target as HTMLElement).dataset.programId);
+            if (Number.isFinite(id)) ids.push(id);
+            io.unobserve(entry.target);
+          }
+        }
+        if (ids.length) {
+          setRevealed((prev) => {
+            const next = new Set(prev);
+            ids.forEach((id) => next.add(id));
+            return next;
+          });
+        }
+      },
+      { rootMargin: "0px 0px -10% 0px", threshold: 0.08 },
+    );
+    rowRefs.current.forEach((el) => el && io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
   return (
     <section className="series band" id="series">
       <div className="container">
@@ -40,13 +75,19 @@ export function Series({ availability }: Props) {
             const a = byId.get(p.id);
             const soldOut = !!a?.isSoldOut || (a?.availableCount ?? 24) <= 0;
             const isPlaying = playingKey === p.code;
+            const isRevealed = revealed.has(p.id);
             return (
               <article
                 key={p.id}
+                ref={(el) => {
+                  if (el) rowRefs.current.set(p.id, el);
+                  else rowRefs.current.delete(p.id);
+                }}
                 role="listitem"
                 data-reveal=""
                 data-opera={p.code}
-                className={`series__row${isPlaying ? " is-playing" : ""}${soldOut ? " is-soldout" : ""}`}
+                data-program-id={p.id}
+                className={`series__row${isRevealed ? " in" : ""}${isPlaying ? " is-playing" : ""}${soldOut ? " is-soldout" : ""}`}
               >
                 <div className="s-num">{p.romanNumeral}.</div>
                 <div>
