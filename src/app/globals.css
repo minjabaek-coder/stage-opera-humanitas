@@ -1969,3 +1969,472 @@ section.band--paper .band__head .kr { color: var(--ink-paper-dim); }
   font-size: 18px;
   color: var(--ink);
 }
+
+/* ======================================================
+   ADMIN REGISTRATIONS  /admin/registrations
+   ====================================================== */
+
+.admin-registrations__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.admin-registrations__eyebrow {
+  font-family: var(--font-serif-latin);
+  font-style: italic;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 6px;
+}
+.admin-registrations__heading {
+  font-family: var(--font-serif-latin);
+  font-weight: 400;
+  font-size: clamp(28px, 3.4vw, 38px);
+  letter-spacing: -0.01em;
+  margin: 0;
+  color: var(--ink);
+}
+.admin-registrations__export {
+  padding: 10px 16px;
+  font-family: var(--font-serif-latin);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: transparent;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+.admin-registrations__export:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.admin-registrations__error {
+  margin: 0 0 16px;
+  padding: 14px 18px;
+  border: 1px solid color-mix(in srgb, var(--accent-2) 60%, transparent);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--accent-2) 10%, transparent);
+  color: var(--ink);
+  font-size: var(--type-small);
+}
+
+.admin-registrations__filters {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(140px, 1fr) minmax(220px, 2fr) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 18px;
+  background: color-mix(in srgb, var(--bg-soft) 60%, transparent);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+@media (max-width: 800px) {
+  .admin-registrations__filters {
+    grid-template-columns: 1fr 1fr;
+  }
+  .admin-registrations__field--grow,
+  .admin-registrations__actions {
+    grid-column: 1 / -1;
+  }
+}
+
+.admin-registrations__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.admin-registrations__field > span {
+  font-family: var(--font-serif-latin);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.admin-registrations__field select,
+.admin-registrations__field input {
+  padding: 9px 12px;
+  background: var(--bg-deep);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 160ms ease;
+}
+.admin-registrations__field select:focus,
+.admin-registrations__field input:focus {
+  border-color: var(--accent);
+}
+.admin-registrations__field select:disabled,
+.admin-registrations__field input:disabled {
+  opacity: 0.6;
+}
+
+.admin-registrations__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.admin-registrations__apply,
+.admin-registrations__reset {
+  padding: 9px 18px;
+  font-family: var(--font-serif-latin);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: opacity 160ms ease, background-color 160ms ease;
+}
+.admin-registrations__apply {
+  background: var(--accent);
+  color: var(--bg-deep);
+  border: 1px solid var(--accent);
+}
+.admin-registrations__apply:hover:not(:disabled) {
+  opacity: 0.92;
+}
+.admin-registrations__reset {
+  background: transparent;
+  color: var(--ink-dim);
+  border: 1px solid var(--rule);
+}
+.admin-registrations__reset:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--ink) 40%, transparent);
+}
+.admin-registrations__apply:disabled,
+.admin-registrations__reset:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-registrations__count {
+  font-size: var(--type-small);
+  color: var(--ink-faint);
+  margin-bottom: 12px;
+}
+
+.admin-registrations__table-wrap {
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  overflow-x: auto;
+  background: color-mix(in srgb, var(--bg-soft) 50%, transparent);
+}
+.admin-registrations__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  color: var(--ink);
+}
+.admin-registrations__table thead th {
+  text-align: left;
+  padding: 12px 14px;
+  font-family: var(--font-serif-latin);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 400;
+  color: var(--ink-faint);
+  border-bottom: 1px solid var(--rule);
+  background: color-mix(in srgb, var(--bg-soft) 80%, transparent);
+  white-space: nowrap;
+}
+.admin-registrations__table tbody td {
+  padding: 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--rule) 60%, transparent);
+  vertical-align: middle;
+}
+.admin-registrations__table tbody tr:last-child td {
+  border-bottom: none;
+}
+.admin-registrations__col-amount {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.admin-registrations__row {
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+.admin-registrations__row:hover,
+.admin-registrations__row:focus-visible {
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  outline: none;
+}
+.admin-registrations__empty {
+  padding: 32px 14px;
+  text-align: center;
+  color: var(--ink-faint);
+  font-size: var(--type-small);
+}
+
+/* === status badges (PRD §3.6 색 구분) ===================== */
+.admin-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: var(--font-serif-latin);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.admin-status--pending {
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  color: var(--ink-dim);
+  border-color: var(--rule);
+}
+.admin-status--confirmed {
+  background: color-mix(in srgb, #4caf7c 20%, transparent);
+  color: #8fe0b4;
+  border-color: color-mix(in srgb, #4caf7c 40%, transparent);
+}
+.admin-status--cancelled-expired {
+  background: color-mix(in srgb, var(--accent-2) 12%, transparent);
+  color: color-mix(in srgb, var(--accent-2) 50%, var(--ink-dim));
+  border-color: color-mix(in srgb, var(--accent-2) 30%, transparent);
+}
+.admin-status--cancelled-admin {
+  background: color-mix(in srgb, var(--accent-2) 25%, transparent);
+  color: #f08585;
+  border-color: color-mix(in srgb, var(--accent-2) 60%, transparent);
+}
+
+/* === pagination =========================================== */
+.admin-pagination {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+.admin-pagination button {
+  padding: 6px 12px;
+  min-width: 36px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  color: var(--ink-dim);
+  font-family: var(--font-serif-latin);
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease, background-color 120ms ease;
+}
+.admin-pagination button:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--ink) 30%, transparent);
+}
+.admin-pagination button.is-active {
+  color: var(--bg-deep);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.admin-pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.admin-pagination__ellipsis {
+  color: var(--ink-faint);
+  padding: 0 4px;
+}
+
+/* ======================================================
+   ADMIN DETAIL MODAL
+   ====================================================== */
+
+.admin-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vw, 40px);
+}
+.admin-modal__scrim {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(8, 12, 20, 0.7);
+  backdrop-filter: blur(4px);
+  border: none;
+  cursor: pointer;
+}
+.admin-modal__panel {
+  position: relative;
+  width: min(100%, 720px);
+  max-height: min(92vh, 880px);
+  overflow-y: auto;
+  background: var(--bg-soft);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 28px clamp(20px, 4vw, 32px);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+.admin-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--rule);
+}
+.admin-modal__eyebrow {
+  margin: 0 0 6px;
+  font-family: var(--font-serif-latin);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+.admin-modal__title {
+  margin: 0;
+  font-family: var(--font-serif-kr);
+  font-weight: 500;
+  font-size: 22px;
+  color: var(--ink);
+}
+
+.admin-modal__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px 24px;
+  margin: 0;
+}
+@media (max-width: 600px) {
+  .admin-modal__grid { grid-template-columns: 1fr; }
+}
+.admin-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.admin-modal__field--wide {
+  grid-column: 1 / -1;
+}
+.admin-modal__field dt {
+  font-family: var(--font-serif-latin);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.admin-modal__field dd {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+.admin-modal__error {
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent-2) 60%, transparent);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent-2) 12%, transparent);
+  color: var(--ink);
+  font-size: var(--type-small);
+}
+
+.admin-modal__footer,
+.admin-modal__confirm-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+}
+.admin-modal__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.admin-modal__confirm > p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink);
+}
+.admin-modal__cancel-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.admin-modal__cancel-field > span {
+  font-family: var(--font-serif-latin);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.admin-modal__cancel-field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg-deep);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  resize: vertical;
+  outline: none;
+}
+.admin-modal__cancel-field textarea:focus {
+  border-color: var(--accent);
+}
+
+.admin-modal__footer button,
+.admin-modal__confirm-actions button {
+  padding: 9px 18px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ink-dim);
+  font-family: var(--font-serif-latin);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+.admin-modal__footer button:hover:not(:disabled),
+.admin-modal__confirm-actions button:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--ink) 40%, transparent);
+}
+.admin-modal__primary {
+  background: var(--accent) !important;
+  color: var(--bg-deep) !important;
+  border-color: var(--accent) !important;
+}
+.admin-modal__primary:hover:not(:disabled) {
+  opacity: 0.92;
+}
+.admin-modal__danger {
+  background: color-mix(in srgb, var(--accent-2) 80%, transparent) !important;
+  color: var(--ink) !important;
+  border-color: var(--accent-2) !important;
+}
+.admin-modal__danger:hover:not(:disabled) {
+  opacity: 0.92;
+}
+.admin-modal__footer button:disabled,
+.admin-modal__confirm-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
