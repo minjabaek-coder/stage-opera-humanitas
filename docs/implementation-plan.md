@@ -5,7 +5,7 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 각 항목 옆 체크박스는 **구현 완료** 여부 — 코드가 들어가고 dev 환경에서 동작이 확인됐을 때만 체크.
 설계 결정의 *근거*는 [./decisions.md](./decisions.md), 변하지 않는 *요구사항*은 [./PRD.md](./PRD.md)를 본다.
 
-> **현재 상태 (2026-05-18 기준):** Phase 1A/1B/1C 전체 완료 + **Phase 1D 코드 영역 완료** (PRD §11 인수 기준 9/11 + 동시 신청 부하 테스트 통과, mobile/desktop viewport 확인, 정리 SQL 작성). 남은 1D 항목은 모두 **운영자 결정/외부 시스템 작업**: PRD §10 미해결 항목 확정 + Vercel 프로젝트 import + env vars 입력 + 도메인 연결 + cleanup-pre-deploy.sql 실행 + §11-10(실기기 모바일/PC 브라우저 매트릭스). 배포 가이드 README 가 다음 진입점.
+> **현재 상태 (2026-05-18 기준):** Phase 1A/1B/1C 전체 완료 + **Phase 1D 코드·문서 영역 모두 완료** (PRD §11 인수 기준 9/11 + 동시 신청 부하 테스트 통과, mobile/desktop viewport 확인, 정리 SQL 작성, 배포 가이드 [`docs/deploy.md`](./deploy.md) 작성). 남은 1D 항목은 모두 **운영자 결정/외부 시스템 작업**으로 deploy.md §0/§1/§3/§4 를 따라가면 끝남. 다음 진입점은 운영자와 함께 deploy.md 실행 (또는 Phase 2 자동화 시작).
 
 ---
 
@@ -173,8 +173,10 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 - [ ] Vercel Cron 활성화 확인 (`vercel.json` 자동 인식)
 - [ ] 운영 첫 신청 한 건 통과시켜 입금 안내 + cron 동작 모니터링
 
-### D5. 배포 가이드 README (다음 세션)
-- [ ] 위 D2/D3/D4 항목을 운영자가 따라갈 수 있는 단일 문서로 정리
+### D5. 배포 가이드 README  (✅ 작성 완료 / 커밋 TBD)
+- [x] [`docs/deploy.md`](./deploy.md) — 운영자가 한 번에 따라가는 8개 섹션 (§0 결정 체크리스트 → §1 Supabase → §2 시크릿 생성 → §3 Vercel import + env vars + 도메인 → §4 운영 첫 검증 + cron 동작 확인 + §11-10 실기기 매트릭스 → §5 운영 모드 전환 → §6 트러블슈팅 → §7 운영 중 자주 쓰는 작업 → §8 Phase 2 진입 시 추가)
+- [x] `README.md` Docs 섹션에 deploy.md 와 migrations README 링크 추가
+- [x] `README.md` 의 stale 카피 정리 (`Phase 1B에 연결 예정` / `(예정) lib/` → 실제 src 트리)
 
 ---
 

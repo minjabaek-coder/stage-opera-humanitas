@@ -16,6 +16,8 @@ npm run dev
 - [`docs/PRD.md`](./docs/PRD.md) — 변경되지 않는 요구사항 명세 (v1.0)
 - [`docs/implementation-plan.md`](./docs/implementation-plan.md) — Phase 별 진행 상황 / 다음 작업
 - [`docs/decisions.md`](./docs/decisions.md) — PRD에서 벗어난 결정 (ADR-lite)
+- [`docs/deploy.md`](./docs/deploy.md) — Phase 1D 배포 가이드 (Supabase 마이그레이션 + Vercel env + 도메인 + 운영 첫 검증)
+- [`supabase/migrations/README.md`](./supabase/migrations/README.md) — SQL 적용 순서 + 정리 SQL 안내
 
 ## Tech stack
 
@@ -26,8 +28,9 @@ npm run dev
 | Language | TypeScript 5 |
 | Styling | Tailwind CSS v4 (CSS-first 토큰) + 원본 BEM CSS |
 | Fonts | `Cormorant Garamond` · `EB Garamond` · `Noto Serif KR` · `Inter` (via `next/font/google`) |
-| Backend | Supabase (PostgreSQL) — *Phase 1B에 연결 예정* |
-| Deployment | Vercel (Cron 포함) |
+| Backend | Supabase (PostgreSQL, `opera_humanitas` 전용 schema) |
+| Auth | 환경변수 비밀번호 + `jose` HS256 JWT 쿠키 (Phase 2 에서 Supabase Auth 로 전환 예정) |
+| Deployment | Vercel (Cron 포함 — `/api/cron/expire-pending` 매시 정각) |
 
 PRD가 명시한 버전보다 최신을 사용하는 경우는 [`docs/decisions.md`](./docs/decisions.md)에 근거가 적혀 있다.
 
@@ -35,12 +38,23 @@ PRD가 명시한 버전보다 최신을 사용하는 경우는 [`docs/decisions.
 
 ```
 src/
-├── app/                       # App Router 페이지 + globals.css
+├── app/
+│   ├── (landing routes)/      # `/`, `/apply`, `/apply/complete`
+│   ├── admin/                 # `/admin` 로그인 + `(authed)/dashboard|registrations|settings`
+│   ├── api/                   # /api/registrations, /api/admin/*, /api/cron/expire-pending
+│   ├── globals.css            # PRD §6.4 디자인 토큰 + BEM 클래스
+│   └── proxy.ts               # Next.js 16 의 middleware (ADR-008 rename)
 ├── components/landing/        # 랜딩 페이지 섹션 컴포넌트
-├── data/programs.ts           # 4개 회차 메타데이터 + availability stub
-└── lib/                       # (예정) supabase 클라이언트, validation, auth
+├── data/programs.ts           # 4개 회차 메타데이터 + availability stub (Supabase 미설정 시 fallback)
+└── lib/
+    ├── admin/                 # dashboard·registrations 서버 헬퍼 (page + API 공용)
+    ├── auth/                  # 관리자 JWT 발급·검증
+    ├── supabase/              # anon / service_role 클라이언트
+    └── validation/            # Zod 스키마 (registration, admin)
 public/images/                 # hero, speaker, books, sponsor 로고
-docs/                          # PRD, implementation plan, ADR
+supabase/                      # SQL migrations + seed + 배포 직전 정리 스크립트
+docs/                          # PRD, implementation plan, ADR, deploy guide
+vercel.json                    # Cron schedule
 ```
 
 ## Scripts
