@@ -444,6 +444,7 @@ function DetailModal({
   const [confirmingApprove, setConfirmingApprove] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  const [confirmingRevert, setConfirmingRevert] = useState(false);
 
   // ESC 닫기
   useEffect(() => {
@@ -469,6 +470,29 @@ function DetailModal({
         return;
       }
       setConfirmingApprove(false);
+      onMutated();
+    } catch {
+      setError("네트워크 오류가 발생했습니다.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function revert() {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/registrations/${item.id}/revert`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as
+          | { error?: { message?: string } }
+          | null;
+        setError(body?.error?.message ?? "임시예약 복귀에 실패했습니다.");
+        return;
+      }
+      setConfirmingRevert(false);
       onMutated();
     } catch {
       setError("네트워크 오류가 발생했습니다.");
@@ -510,6 +534,7 @@ function DetailModal({
 
   const canApprove = item.status === "pending";
   const canCancel = item.status !== "cancelled";
+  const canRevert = item.status === "confirmed" || item.status === "cancelled";
 
   return (
     <div className="admin-modal" role="dialog" aria-modal="true" aria-label="신청 상세">
@@ -584,6 +609,46 @@ function DetailModal({
           </div>
         ) : null}
 
+        {confirmingRevert ? (
+          <div className="admin-modal__confirm">
+            {item.status === "confirmed" ? (
+              <p>
+                {item.reference_no} 신청을 다시 임시예약 상태로 되돌릴까요?
+                <br />
+                입금 기한이 지금부터 다시 시작되며, 확정시각 기록은 비워집니다.
+              </p>
+            ) : (
+              <p>
+                {item.reference_no} 신청의 취소를 철회하고 임시예약 상태로 되돌릴까요?
+                <br />
+                선택 회차가 매진이거나 동일 이메일/전화로 활성 신청이 있으면 거절됩니다.
+                <br />
+                성공 시 입금 기한이 지금부터 다시 시작되며 취소 사유 기록이 비워집니다.
+              </p>
+            )}
+            <div className="admin-modal__confirm-actions">
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmingRevert(false);
+                  setError(null);
+                }}
+                disabled={busy}
+              >
+                되돌아가기
+              </button>
+              <button
+                type="button"
+                className="admin-modal__primary"
+                onClick={revert}
+                disabled={busy}
+              >
+                {busy ? "처리 중…" : "임시예약으로 복귀"}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         {cancelling ? (
           <div className="admin-modal__confirm">
             <label className="admin-modal__cancel-field">
@@ -621,7 +686,7 @@ function DetailModal({
           </div>
         ) : null}
 
-        {!confirmingApprove && !cancelling ? (
+        {!confirmingApprove && !cancelling && !confirmingRevert ? (
           <footer className="admin-modal__footer">
             <button
               type="button"
@@ -640,6 +705,17 @@ function DetailModal({
                 }}
               >
                 승인
+              </button>
+            ) : null}
+            {canRevert ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  setConfirmingRevert(true);
+                }}
+              >
+                임시예약으로 복귀
               </button>
             ) : null}
             {canCancel ? (

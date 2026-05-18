@@ -5,7 +5,7 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 각 항목 옆 체크박스는 **구현 완료** 여부 — 코드가 들어가고 dev 환경에서 동작이 확인됐을 때만 체크.
 설계 결정의 *근거*는 [./decisions.md](./decisions.md), 변하지 않는 *요구사항*은 [./PRD.md](./PRD.md)를 본다.
 
-> **현재 상태 (2026-05-19 기준):** Phase 1A/1B/1C 전체 완료 + Phase 1D 코드·문서·**실배포 실행까지 완료**. Prod URL `stage-opera-humanitas.vercel.app` Ready, Supabase 운영 schema 에 migrations + cleanup 적용 완료, Vercel env 6 + cron(daily UTC 18:00) 등록, `@vercel/analytics` 마운트. 남은 항목: ⏳ §4-1 운영 계좌 입력 / §4-2 승인·취소 흐름 검증(OH-2026-0002 `pending` 으로 남아있음) / §4-3 cron 수동 호출 / §3-4 도메인 / §4-4 실기기 매트릭스 / 신규 backlog: confirmed→pending 복귀 기능 검토. 모두 launch 직전 또는 별도 세션에서 처리.
+> **현재 상태 (2026-05-19 기준):** Phase 1A/1B/1C 전체 완료 + Phase 1D 코드·문서·**실배포 실행까지 완료**. Prod URL `stage-opera-humanitas.vercel.app` Ready, Supabase 운영 schema 에 migrations + cleanup 적용 완료, Vercel env 6 + cron(daily UTC 18:00) 등록, `@vercel/analytics` 마운트. **신규: 상태 전이 양방향화 — `confirmed/cancelled → pending` 복귀 기능 추가 (migration 0005 + revert API + UI)**. 남은 항목: ⏳ §4-1 운영 계좌 입력 / §4-2 승인·취소·복귀 흐름 검증(OH-2026-0002 `pending` 으로 남아있음) / §4-3 cron 수동 호출 / §3-4 도메인 / §4-4 실기기 매트릭스 / 운영 Supabase 에 0005 migration 적용. 모두 launch 직전 또는 별도 세션에서 처리.
 
 ---
 
@@ -200,7 +200,13 @@ deploy.md 절차를 그대로 따라간 결과 + 진행 중 발생한 결정·�
 
 #### D6 신규 발견 — backlog (별도 세션)
 
-- [ ] **상태 전이 일방향 제약 검토** — 현재 코드는 `confirmed → pending` 복귀 불가, `cancelled → *` 복귀 불가 (단방향). 운영 시 실수 승인 복구가 "취소 + 재신청" 으로만 가능. PRD 요구 vs. UX 비용 재검토 필요. 도입 시 영향: `POST /api/admin/registrations/[id]/revert` + UI 버튼 + admin_audit_log 액션 + 입금 안내 URL 재사용 부수효과 처리
+- [x] **상태 전이 일방향 제약 완화 — `confirmed/cancelled → pending` 복귀 기능 도입** (구현 완료 2026-05-19)
+  - `supabase/migrations/0005_revert_registration.sql` — `revert_registration_to_pending(uuid)` RPC. `confirmed → pending` 은 본인 점유분이 그대로라 좌석 검증 생략, `cancelled → pending` 은 `create_registration` 과 동일한 FOR UPDATE 락 + 활성 좌석 카운트 + (email|phone)×program 중복 검증. 새 `expires_at = now() + settings.hold_hours` 발급 + `confirmed_at/cancelled_at/cancel_reason` 컬럼 null 초기화. SQLSTATE OH001=매진/OH002=중복/OH003=이미 pending
+  - `POST /api/admin/registrations/[id]/revert` — UUID 검증 → before snapshot → RPC → SQLSTATE → audit log. 별도 body 없음
+  - `recordAdminAction` `AdminAction` 유니온에 `revert` 추가. payload 에 `{ from, to, previous_cancel_reason, previous_expires_at, new_expires_at }`
+  - `RegistrationsClient.tsx` DetailModal 에 "임시예약으로 복귀" 버튼 — `status === 'confirmed' || 'cancelled'` 일 때 노출. 이전 상태별로 confirm 카피 분기 (실수 승인 복구 vs 취소 철회+매진 거절 경고)
+  - **운영자 작업 필요**: 운영 Supabase SQL Editor 에 `0005_revert_registration.sql` 적용
+  - **부수효과 결정**: 입금 안내 URL(`/apply/complete?id=...`)은 별도 처리 안 함 — 같은 `id` 로 유효한 새 `expires_at` 이 박혀 페이지가 자연히 새 기한을 노출. cron 만료 처리도 영향 없음 (status=pending + expires_at 기준이라 새 기한이 그대로 적용됨)
 
 ---
 

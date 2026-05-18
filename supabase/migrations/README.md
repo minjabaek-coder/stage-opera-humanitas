@@ -13,7 +13,8 @@ Supabase Dashboard > **SQL Editor** 에서 다음 파일을 순서대로 붙여�
 | 2 | [`0002_views_and_fns.sql`](./0002_views_and_fns.sql) | §4.4 / §5.1 / §6.5 | `program_availability` 뷰, `expire_pending_registrations()`, `create_registration()` RPC |
 | 3 | [`0003_rls.sql`](./0003_rls.sql) | §4.5 | RLS 정책 (public SELECT 허용 범위 외에는 차단) |
 | 4 | [`0004_fix_create_registration.sql`](./0004_fix_create_registration.sql) | §5.1 / §6.5 | `create_registration` 함수의 `id` 컬럼 ↔ 리턴 변수 ambiguity(SQLSTATE 42702) 해결 — `#variable_conflict use_column` 디렉티브 |
-| 5 | [`../seed.sql`](../seed.sql) | §4.3 | 4개 회차 + settings 1행 |
+| 5 | [`0005_revert_registration.sql`](./0005_revert_registration.sql) | §3.6 보강 | `revert_registration_to_pending(uuid)` RPC — `confirmed/cancelled → pending` 복귀. `cancelled → pending` 시 FOR UPDATE 락 + 좌석/중복 검증 (OH001/OH002), 그 외 OH003=이미 pending |
+| 6 | [`../seed.sql`](../seed.sql) | §4.3 | 4개 회차 + settings 1행 |
 
 ## 적용 후 Dashboard에서 1회만 설정
 

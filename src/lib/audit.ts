@@ -9,6 +9,7 @@ import { getServiceClient } from "@/lib/supabase/server";
 export type AdminAction =
   | "approve"
   | "cancel"
+  | "revert"
   | "update_settings"
   | "update_program";
 
