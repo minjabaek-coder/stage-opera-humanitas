@@ -5,7 +5,7 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 각 항목 옆 체크박스는 **구현 완료** 여부 — 코드가 들어가고 dev 환경에서 동작이 확인됐을 때만 체크.
 설계 결정의 *근거*는 [./decisions.md](./decisions.md), 변하지 않는 *요구사항*은 [./PRD.md](./PRD.md)를 본다.
 
-> **현재 상태 (2026-05-18 기준):** Phase 1A ✅, 1B ✅, **1C 부분 — C1 인증 ✅ + C2 관리자 UI 3종 ✅ + C3 관리자 API ✅** 까지 완료. 다음 진입점은 **§C4 Vercel Cron** → Phase 1D 배포 준비.
+> **현재 상태 (2026-05-18 기준):** Phase 1A ✅, 1B ✅, **1C 전체 완료 (C1 인증 + C2 관리자 UI 3종 + C3 관리자 API + C4 Vercel Cron)** 까지 완료. 다음 진입점은 **Phase 1D 배포 준비** (Vercel 프로젝트 연결, 환경변수 입력, 도메인, §10 미해결 항목 확인, §11 인수 기준 점검).
 
 ---
 
@@ -114,11 +114,13 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 - [x] `PUT /api/admin/programs/[id]` — 회차별 정원 (PRD §3.7 분리 저장 UI 와 정합). 현재 활성 좌석 미만으로 축소 금지.
 - [x] 모든 변경 액션은 `admin_audit_log` 기록
 
-> **검증 부수효과:** Playwright 검증 과정에서 `OH-2026-0001` (program=I) + `OH-2026-0002` (program=II, C2-2) + `OH-2026-0003` (program=III, C2-3 capacity floor 가드 확인용) 가 모두 `cancelled` 상태로 남았고, `admin_audit_log` 에 검증 액션이 누적됐다. Phase 1D 배포 직전에 일괄 정리: `DELETE FROM opera_humanitas.registrations WHERE reference_no LIKE 'OH-2026-%' AND name = '테스트신청자';` + `TRUNCATE opera_humanitas.admin_audit_log;` (+ reference seq 리셋도 함께 고려).
+> **검증 부수효과:** Playwright 검증 과정에서 `OH-2026-0001` (program=I) + `OH-2026-0002` (program=II, C2-2) + `OH-2026-0003` (program=III, C2-3 capacity floor 가드) + `OH-2026-0004` (program=IV, C4 cron expiry — `cancel_reason='expired'`) 가 모두 `cancelled` 상태로 남았고, `admin_audit_log` 에 검증 액션이 누적됐다. Phase 1D 배포 직전에 일괄 정리: `DELETE FROM opera_humanitas.registrations WHERE reference_no LIKE 'OH-2026-%' AND name = '테스트신청자';` + `TRUNCATE opera_humanitas.admin_audit_log;` (+ reference seq 리셋도 함께 고려).
 
-### C4. Vercel Cron (PRD §5.3)
-- [ ] `POST /api/cron/expire-pending` — `Bearer ${CRON_SECRET}` 검증 + `expire_pending_registrations()` 호출
-- [ ] `vercel.json` cron schedule `0 * * * *`
+### C4. Vercel Cron (PRD §5.3)  (✅ 완료 / 커밋 `94d63fe`)
+- [x] `POST /api/cron/expire-pending` — `Bearer ${CRON_SECRET}` timing-safe 검증 + `expire_pending_registrations()` RPC 호출. CRON_SECRET 미설정 시 500 fail-loud
+- [x] `vercel.json` cron schedule `0 * * * *`
+- [x] **부수 fix**: `RegistrationsClient` 의 status badge 가 `cancel_reason === 'expired'` (PG 함수가 실제로 박는 literal) 을 만료로 분류하도록 수정. 이전 로직(`startsWith('system:')`)으로는 cron 으로 만료된 row 가 "취소 (관리자)" 로 잘못 표시됐다
+- [x] `.env.local` 에 CRON_SECRET dev placeholder 추가 (gitignored). Phase 1D 배포 전 운영자가 정한 값으로 교체 필요
 
 ---
 
