@@ -80,12 +80,49 @@ export const PROGRAMS: readonly Program[] = [
   },
 ] as const;
 
-// Stub — replace with Supabase query in §5 (GET /api/programs).
-// Returns full availability so the landing page renders without a DB yet.
-export async function getProgramAvailability(): Promise<ProgramAvailability[]> {
+import { getAnonClient } from "@/lib/supabase/anon";
+
+type AvailabilityRow = {
+  id: Program["id"];
+  available_count: number;
+  is_sold_out: boolean;
+};
+
+function fullAvailability(): ProgramAvailability[] {
   return PROGRAMS.map((p) => ({
     programId: p.id,
     availableCount: p.capacity,
     isSoldOut: false,
   }));
+}
+
+export async function getProgramAvailability(): Promise<ProgramAvailability[]> {
+  const supabase = getAnonClient();
+  if (!supabase) {
+    // env 미설정(개발 초기) 시 정원 가득 찬 상태로 fallback — 랜딩은 계속 동작.
+    return fullAvailability();
+  }
+
+  const { data, error } = await supabase
+    .from("program_availability")
+    .select("id, available_count, is_sold_out")
+    .returns<AvailabilityRow[]>();
+
+  if (error || !data) {
+    console.error("[programs] program_availability query failed", error);
+    return fullAvailability();
+  }
+
+  const byId = new Map(data.map((row) => [row.id, row]));
+  return PROGRAMS.map((p) => {
+    const row = byId.get(p.id);
+    if (!row) {
+      return { programId: p.id, availableCount: p.capacity, isSoldOut: false };
+    }
+    return {
+      programId: p.id,
+      availableCount: Math.max(0, row.available_count),
+      isSoldOut: row.is_sold_out,
+    };
+  });
 }

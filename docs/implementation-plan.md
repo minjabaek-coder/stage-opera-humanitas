@@ -22,39 +22,49 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 
 ## Phase 1B — 데이터 베이스 + 신청 흐름
 
-### B1. Supabase 스키마 + 시드
-- [ ] `supabase/migrations/0001_init.sql` — `programs`, `registrations`, `registration_items`, `settings`, `admin_audit_log` (PRD §4.2)
-- [ ] `supabase/migrations/0002_views_and_fns.sql` — `program_availability` 뷰, `expire_pending_registrations()` 함수, `create_registration()` RPC (PRD §4.4, §6.5)
-- [ ] `supabase/seed.sql` — 4개 회차 시드 + `settings` 단일 행 (PRD §4.3)
-- [ ] `supabase/migrations/0003_rls.sql` — RLS 정책 (PRD §4.5)
-- [ ] `supabase/migrations/README.md` — 각 migration이 PRD §4의 어느 부분에 해당하는지 매핑
-- [ ] 사용자가 Supabase 프로젝트 생성 후 SQL Editor에 붙여넣어 적용 → 콘솔로 확인
+### B1. Supabase 스키마 + 시드  (✅ 완료)
+- [x] `supabase/migrations/0001_init.sql` — `opera_humanitas` schema + `programs`, `registrations`, `registration_items`, `settings`, `admin_audit_log` (PRD §4.2, ADR-007)
+- [x] `supabase/migrations/0002_views_and_fns.sql` — `program_availability` 뷰, `expire_pending_registrations()` 함수, `create_registration()` RPC (PRD §4.4, §6.5)
+- [x] `supabase/seed.sql` — 4개 회차 시드 + `settings` 단일 행 (PRD §4.3)
+- [x] `supabase/migrations/0003_rls.sql` — RLS 정책 (PRD §4.5)
+- [x] `supabase/migrations/0004_fix_create_registration.sql` — `create_registration` 함수 본문의 `id` 컬럼 ↔ 변수 ambiguity(SQLSTATE 42702) 해결 (`#variable_conflict use_column`)
+- [x] `supabase/migrations/README.md` — 각 migration이 PRD §4의 어느 부분에 해당하는지 매핑 + Dashboard "Exposed schemas" 운영자 안내
+- [x] **사용자 작업**: 공유 Supabase 프로젝트 SQL Editor에 0001 → 0002 → 0003 → 0004 → seed 순으로 붙여넣어 적용
+- [x] **사용자 작업**: Dashboard > Project Settings > API > Exposed schemas 에 `opera_humanitas` 추가
+- [x] **사용자 작업**: `.env.local` 채우고 `npm run dev` 로 랜딩의 좌석 표시가 24/24로 떠는지 확인
 
-### B2. Supabase 클라이언트 + 환경 변수
-- [ ] `src/lib/supabase/server.ts` (service role) + `src/lib/supabase/anon.ts` (anon)
-- [ ] `.env.example` — `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_PASSWORD`, `ADMIN_JWT_SECRET`, `CRON_SECRET`
-- [ ] `src/data/programs.ts`의 `getProgramAvailability()` stub → 실제 `program_availability` 뷰 조회로 교체
+### B2. Supabase 클라이언트 + 환경 변수  (✅ 완료)
+- [x] `src/lib/supabase/anon.ts` — `OperaClient` 타입 + `getAnonClient()` (schema 고정)
+- [x] `src/lib/supabase/server.ts` — `getServiceClient()` (`server-only` 보호)
+- [x] `.env.example` — `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_PASSWORD`, `ADMIN_JWT_SECRET`, `CRON_SECRET`
+- [x] `src/data/programs.ts`의 `getProgramAvailability()` → `program_availability` 뷰 조회로 교체 (env 미설정 시 stub fallback)
+- [x] `src/app/page.tsx` 에 `export const revalidate = 30` 추가 — 런타임에 좌석 현황 캐싱이 stale 안 되도록
 
-### B3. Public API 라우트 (PRD §5.1)
-- [ ] `GET /api/programs` — 회차 목록 + 좌석 현황
-- [ ] `GET /api/settings/public` — 계좌·홀드시간
-- [ ] `POST /api/registrations` — 트랜잭션으로 신청 생성 (매진/중복 체크 포함)
-- [ ] `GET /api/registrations/[id]` — 완료 페이지 상세
-- [ ] Zod 스키마 (`src/lib/validation/registration.ts`)
+### B3. Public API 라우트 (PRD §5.1)  (✅ 완료)
+- [x] `GET /api/programs` — `programs` + `program_availability` 병합 응답
+- [x] `GET /api/settings/public` — 공개 운영 정보(은행/계좌/예금주/홀드 시간)
+- [x] `POST /api/registrations` — Zod 검증 + `create_registration` RPC + SQLSTATE 'OH001/OH002' → 409 분기
+- [x] `GET /api/registrations/[id]` — UUID 검증, service_role로 `registrations` + `registration_items` + `programs` 임베드, `settings` 동봉
+- [x] Zod 스키마 (`src/lib/validation/registration.ts`) + 전화 자동 하이픈 헬퍼
 
-### B4. 신청 페이지 `/apply` (PRD §3.2)
-- [ ] `src/app/apply/page.tsx` — 클라이언트 폼 (React Hook Form + Zod)
-- [ ] `?program=` 파싱 → 사전 체크 (매진은 자동 체크 제외)
-- [ ] 가격 실시간 합산, 전화번호 하이픈 포맷, 약관 동의, 더블 클릭 방지
-- [ ] 매진/중복 에러 → 명확한 메시지
+### B4. 신청 페이지 `/apply` (PRD §3.2)  (✅ 완료)
+- [x] `src/app/apply/page.tsx` (서버 컴포넌트, DB 미연결 시 fallback) + `ApplyClient.tsx` (RHF + zodResolver)
+- [x] `?program=1,3` 콤마 구분 파싱 → 사전 체크 (매진/0석은 자동 체크 제외)
+- [x] 가격 실시간 합산, 전화번호 자동 하이픈, [필수] 동의 일괄 토글, isSubmitting 더블 클릭 방지
+- [x] 매진/중복/검증 에러 분기 + 서버 에러 배너
 
-### B5. 완료 페이지 `/apply/complete` (PRD §3.3)
-- [ ] `src/app/apply/complete/page.tsx` — `?id=<uuid>`로 신청 상세 조회
-- [ ] 계좌번호/금액 복사 버튼
+### B5. 완료 페이지 `/apply/complete` (PRD §3.3)  (✅ 완료)
+- [x] `src/app/apply/complete/page.tsx` — `?id=<uuid>`로 service_role 직접 조회 (RLS 차단 회피)
+- [x] 입금 기한을 KST로 포맷 (`Intl.DateTimeFormat`, `Asia/Seoul`)
+- [x] `CopyButtons.tsx` (계좌번호·금액 복사, 1.5s 토스트 텍스트)
 
 ### B6. 인수 기준 검증
-- [ ] 마지막 1석 동시 신청 부하 테스트 (`POST /api/registrations` 2건 동시) — 정확히 1건만 성공
-- [ ] 모바일/PC 브라우저 검증
+- [x] `/`에 `revalidate = 30` ISR 추가 — 빌드 시점 박제 방지
+- [x] **사용자 검증**: `npm run dev` → `http://localhost:3000/apply` 진입, 회차 선택→폼 작성→제출까지 통과해 `/apply/complete?id=...` 에 도달하는지 (Playwright E2E 통과)
+- [x] **사용자 검증**: 동일 이메일로 동일 회차 재제출 시 "이미 신청된 회차" 에러 노출되는지 (Playwright로 OH002 메시지 노출 확인)
+- [ ] 마지막 1석 동시 신청 부하 테스트 (`POST /api/registrations` 2건 동시) — 정확히 1건만 성공 *(Phase 1D 배포 전 점검 항목으로 이연)*
+- [ ] 모바일/PC 브라우저 검증 *(Phase 1D 배포 전 점검 항목으로 이연)*
+- [ ] (이후) 레이트 리미팅 (PRD §6.7) — Vercel 인스턴스가 메모리 공유 안 하므로 Upstash 등 외부 스토어 필요. Phase 2로 이연.
 
 ---
 

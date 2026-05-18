@@ -51,3 +51,10 @@ PRD([./PRD.md](./PRD.md))에서 **의도적으로 벗어난 결정**만 기록�
 - **Decision:** Phase 1B(`/apply` 페이지 시작 시점)에 한 번에 설치. 그때까지 미설치.
 - **Why:** 안 쓰는 의존성을 미리 깔아두면 lockfile만 부풀고 보안 audit 노이즈만 늘어남. 실제 첫 사용 시점에 최신 버전을 깔면 됨.
 - **Reversal cost:** N/A — 단순 설치 시점 결정.
+
+## ADR-007 · 다른 서비스와 **Supabase 프로젝트 공유**, 전용 `opera_humanitas` schema로 격리 (2026-05-18)
+
+- **Context:** 사용자가 운영 중인 별도 서비스가 이미 Supabase 프로젝트 1개를 쓰고 있고, Opera Humanitas도 그 프로젝트를 그대로 공용한다. PRD §6은 단일 Supabase 프로젝트만 가정.
+- **Decision:** 모든 신규 객체(테이블 5종, 뷰 1종, 함수 3종, 시퀀스 1종)는 `create schema if not exists opera_humanitas` 안에 만든다. `public` schema는 건드리지 않음. `gen_random_uuid()`는 `extensions.gen_random_uuid()`로 schema-qualify. 마이그레이션 적용 후 Dashboard > API > Exposed schemas 에 `opera_humanitas` 를 1회 추가해야 PostgREST가 접근 가능. 클라이언트는 `createClient(..., { db: { schema: 'opera_humanitas' } })` 로 기본 스키마를 고정 (`src/lib/supabase/anon.ts`, `server.ts`).
+- **Why:** (1) **이름 충돌 0**: 다른 서비스가 `programs`/`registrations` 같은 흔한 이름을 써도 무관. (2) **권한 격리**: schema 단위로 `grant usage` 와 RLS를 끊을 수 있어, 다른 서비스의 anon 키가 PII 가 들어가는 `opera_humanitas.registrations` 를 보지 못함. (3) **분리 비용이 낮음**: 나중에 별도 프로젝트로 옮기려면 `pg_dump --schema=opera_humanitas` 한 번이면 됨. 대안인 `oh_` 프리픽스는 anon 키를 한 풀에서 공유하기 때문에 다른 서비스의 RLS 디폴트 실수가 이쪽 PII로 새어나갈 위험이 있다.
+- **Reversal cost:** 중간. Dashboard 설정 한 번과 클라이언트 코드 한 줄이 비용의 전부지만, 일단 데이터가 쌓이면 다른 서비스로 옮길 때 외래키/뷰 재배선이 필요. 그래도 schema 단위 dump/restore가 가능하다는 점에서 prefix 방식 회수보다 훨씬 깔끔.
