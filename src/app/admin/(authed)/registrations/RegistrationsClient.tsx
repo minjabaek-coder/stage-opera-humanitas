@@ -95,20 +95,23 @@ function fmtAmount(n: number): string {
   return n.toLocaleString("ko-KR") + "원";
 }
 
+function isExpiredCancel(reason: string | null): boolean {
+  // PG 함수 expire_pending_registrations() 는 cancel_reason='expired' literal 을 박는다.
+  // 관리자 취소는 cancel/route.ts 가 'admin: <사유>' prefix 를 붙인다.
+  // 따라서 'expired' 자체이거나 'admin' 으로 시작하지 않는 값(예: 과거 PRD 예시 'admin_manual')은
+  // 만료로 보지 않고 admin 으로 분류하는 게 안전. 단순화: reason === 'expired' 만 만료.
+  return reason === "expired";
+}
+
 function statusTone(item: RegistrationListItem): string {
   if (item.status === "pending") return "pending";
   if (item.status === "confirmed") return "confirmed";
-  // cancelled — 만료(system) vs 관리자(admin) 구분 (PRD §3.6)
-  const reason = item.cancel_reason ?? "";
-  if (reason.startsWith("system:")) return "cancelled-expired";
-  return "cancelled-admin";
+  return isExpiredCancel(item.cancel_reason) ? "cancelled-expired" : "cancelled-admin";
 }
 
 function statusLabel(item: RegistrationListItem): string {
   if (item.status !== "cancelled") return STATUS_KO(item.status);
-  const reason = item.cancel_reason ?? "";
-  if (reason.startsWith("system:")) return "취소 (만료)";
-  return "취소 (관리자)";
+  return isExpiredCancel(item.cancel_reason) ? "취소 (만료)" : "취소 (관리자)";
 }
 
 export function RegistrationsClient({
