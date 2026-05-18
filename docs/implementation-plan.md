@@ -83,7 +83,7 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 - [ ] `/admin/registrations` — 필터·검색·페이지네이션 테이블 + 상세 모달
 - [ ] `/admin/settings` — 계좌/홀드 시간/회차 정원 편집
 
-### C3. 관리자 API (PRD §5.2)  (✅ 완료)
+### C3. 관리자 API (PRD §5.2)  (✅ 완료 / 커밋 `969b489`)
 - [x] `src/lib/audit.ts` — `recordAdminAction({ action, target_id, payload })` (실패는 throw 안 함)
 - [x] `src/lib/validation/admin.ts` — Zod 스키마 (`RegistrationsListQuery`, `CancelBody`, `SettingsUpdate`, `ProgramUpdate`)
 - [x] `GET /api/admin/dashboard` — 회차별 (`confirmed`/`pending`/`available`/`capacity`) + `pending_count` + `expiring_soon_count` (≤6h)
