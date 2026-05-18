@@ -70,7 +70,7 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 
 ## Phase 1C — 관리자 + Cron
 
-### C1. 관리자 인증  (✅ 완료)
+### C1. 관리자 인증  (✅ 완료 / 커밋 `7afc6b1`)
 - [x] `src/lib/auth/admin.ts` — `jose` 기반 HS256 JWT 발급/검증 + 쿠키 이름·만료 상수 (Edge 호환)
 - [x] `POST /api/admin/login` — Zod 검증 → timing-safe 비밀번호 비교 → HttpOnly Secure SameSite=Strict 쿠키 12h
 - [x] `POST /api/admin/logout` — 쿠키 Max-Age=0
