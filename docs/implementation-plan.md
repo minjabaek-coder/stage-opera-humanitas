@@ -83,14 +83,17 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 - [ ] `/admin/registrations` — 필터·검색·페이지네이션 테이블 + 상세 모달
 - [ ] `/admin/settings` — 계좌/홀드 시간/회차 정원 편집
 
-### C3. 관리자 API (PRD §5.2)
-- [ ] `GET /api/admin/registrations` — 필터/검색/페이지네이션
-- [ ] `POST /api/admin/registrations/[id]/approve` — pending → confirmed
-- [ ] `POST /api/admin/registrations/[id]/cancel` — 사유 입력 후 cancelled
-- [ ] `GET /api/admin/registrations/export` — UTF-8 BOM CSV
-- [ ] `GET /api/admin/dashboard`
-- [ ] `PUT /api/admin/settings`
-- [ ] 모든 관리자 액션 `admin_audit_log`에 기록
+### C3. 관리자 API (PRD §5.2)  (✅ 완료)
+- [x] `src/lib/audit.ts` — `recordAdminAction({ action, target_id, payload })` (실패는 throw 안 함)
+- [x] `src/lib/validation/admin.ts` — Zod 스키마 (`RegistrationsListQuery`, `CancelBody`, `SettingsUpdate`, `ProgramUpdate`)
+- [x] `GET /api/admin/dashboard` — 회차별 (`confirmed`/`pending`/`available`/`capacity`) + `pending_count` + `expiring_soon_count` (≤6h)
+- [x] `GET /api/admin/registrations` — `status`/`program`/`q`/`page` 필터, page_size=20, `q` 는 name·phone·email·reference_no OR ILIKE
+- [x] `POST /api/admin/registrations/[id]/approve` — pending → confirmed (그 외 409)
+- [x] `POST /api/admin/registrations/[id]/cancel` — 사유 받아 `admin: <reason>` 으로 cancelled 전환
+- [x] `GET /api/admin/registrations/export` — UTF-8 BOM CSV, 전체 컬럼 + 회차 배열
+- [x] `GET/PUT /api/admin/settings` — id=1 singleton 부분 업데이트 (PRD §5.2 는 PUT 만 명시 — UI 진입용 GET 자연 확장)
+- [x] `PUT /api/admin/programs/[id]` — 회차별 정원 (PRD §3.7 분리 저장 UI 와 정합). 현재 활성 좌석 미만으로 축소 금지.
+- [x] 모든 변경 액션은 `admin_audit_log` 기록
 
 ### C4. Vercel Cron (PRD §5.3)
 - [ ] `POST /api/cron/expire-pending` — `Bearer ${CRON_SECRET}` 검증 + `expire_pending_registrations()` 호출
