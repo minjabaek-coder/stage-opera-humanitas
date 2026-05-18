@@ -5,7 +5,7 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 각 항목 옆 체크박스는 **구현 완료** 여부 — 코드가 들어가고 dev 환경에서 동작이 확인됐을 때만 체크.
 설계 결정의 *근거*는 [./decisions.md](./decisions.md), 변하지 않는 *요구사항*은 [./PRD.md](./PRD.md)를 본다.
 
-> **현재 상태 (2026-05-18 기준):** Phase 1A ✅, 1B ✅, **1C 부분 — C1 인증 ✅ + C3 관리자 API ✅ + C2-1 대시보드 ✅** 까지 완료. 다음 진입점은 **§C2-2 `/admin/registrations`** → §C2-3 `/admin/settings` → §C4 Vercel Cron.
+> **현재 상태 (2026-05-18 기준):** Phase 1A ✅, 1B ✅, **1C 부분 — C1 인증 ✅ + C3 관리자 API ✅ + C2-1 대시보드 ✅ + C2-2 신청 목록 ✅** 까지 완료. 다음 진입점은 **§C2-3 `/admin/settings`** → §C4 Vercel Cron.
 
 ---
 
@@ -88,7 +88,14 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
   - 데이터 헬퍼 `src/lib/admin/dashboard.ts` 의 `getDashboardData()` 를 페이지(서버 컴포넌트)와 `/api/admin/dashboard` 양쪽에서 재사용 → API fetch 라운드트립 생략
   - KPI 3장(pending / 6h 내 만료 / 총 잔여 좌석) + 회차 4장 카드(확정/대기 비율 막대)
   - 클라이언트 `RefreshButton` (`router.refresh()` + 트랜지션 토스트), `AdminLogoutButton`, `AdminNav` (usePathname 활성 표시)
-- [ ] `/admin/registrations` — 필터·검색·페이지네이션 테이블 + 상세 모달
+- [x] `/admin/registrations` — 필터·검색·페이지네이션 테이블 + 상세 모달 (커밋 `347b564`)
+  - 데이터 헬퍼 `src/lib/admin/registrations.ts` 의 `listRegistrations()` 를 페이지/API 양쪽에서 재사용 (detail flag 로 동의 컬럼 추가 select)
+  - `RegistrationsListQuerySchema` (`status` / `program` / `q` / `page` / `page_size`) 를 페이지 searchParams 파싱에도 그대로 사용 — 잘못된 URL 은 조용히 기본값으로 fallback
+  - 단일 클라이언트 `RegistrationsClient.tsx` 안에 필터 폼 / 결과 카운트 / 테이블 (행 클릭 → 모달) / 페이지네이션 / 상세 모달 통합. URL 갱신은 `router.push` + `useTransition`
+  - 상태 배지(`pending` / `confirmed` / `cancelled-expired` / `cancelled-admin`) — cancel_reason 의 `system:` / `admin:` prefix 로 만료/관리자 구분
+  - 상세 모달: ESC 닫기, 모든 필드 + 동의 3종 표시, 승인(2단계 confirm) / 취소(사유 textarea, 200자) 액션. API 응답 후 `router.refresh()` → 목록과 모달 상태 동기화 (다음 상태로 빠진 row 는 자동으로 모달 닫힘)
+  - 엑셀 다운로드 링크 → `/api/admin/registrations/export`
+  - React 19 권장 패턴(렌더 중 prev props 비교 후 setState)으로 외부 URL/items 변화 동기화 — `useEffect+setState` 안티패턴 회피 (lint 강제)
 - [ ] `/admin/settings` — 계좌/홀드 시간/회차 정원 편집
 
 ### C3. 관리자 API (PRD §5.2)  (✅ 완료 / 커밋 `969b489`)
@@ -103,7 +110,7 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 - [x] `PUT /api/admin/programs/[id]` — 회차별 정원 (PRD §3.7 분리 저장 UI 와 정합). 현재 활성 좌석 미만으로 축소 금지.
 - [x] 모든 변경 액션은 `admin_audit_log` 기록
 
-> **검증 부수효과:** Playwright 검증 과정에서 `OH-2026-0001` (program=I, "테스트신청자") 이 `cancelled` 상태로 남았고, `admin_audit_log` 에 검증 액션 6건이 누적됐다. Phase 1D 배포 직전에 일괄 정리: `DELETE FROM opera_humanitas.registrations WHERE reference_no LIKE 'OH-2026-%' AND name = '테스트신청자';` + `TRUNCATE opera_humanitas.admin_audit_log;` (+ reference seq 리셋도 함께 고려).
+> **검증 부수효과:** Playwright 검증 과정에서 `OH-2026-0001` (program=I) + `OH-2026-0002` (program=II, C2-2 검증 시 추가) 가 모두 `cancelled` 상태로 남았고, `admin_audit_log` 에 검증 액션이 누적됐다. Phase 1D 배포 직전에 일괄 정리: `DELETE FROM opera_humanitas.registrations WHERE reference_no LIKE 'OH-2026-%' AND name = '테스트신청자';` + `TRUNCATE opera_humanitas.admin_audit_log;` (+ reference seq 리셋도 함께 고려).
 
 ### C4. Vercel Cron (PRD §5.3)
 - [ ] `POST /api/cron/expire-pending` — `Bearer ${CRON_SECRET}` 검증 + `expire_pending_registrations()` 호출
