@@ -65,3 +65,10 @@ PRD([./PRD.md](./PRD.md))에서 **의도적으로 벗어난 결정**만 기록�
 - **Decision:** 16의 새 이름 `proxy.ts` 를 그대로 따른다. 파일 위치는 `src/proxy.ts` (app router 와 동일 레벨). 기능·matcher 문법은 동일.
 - **Why:** rename 만이고 기능 동일. deprecated 이름을 쓰면 빌드 경고가 나오거나 향후 메이저에서 깨질 위험. PRD 표기는 14+ 기준이고, ADR-001 에서 16 채택한 이상 자연스러운 정합.
 - **Reversal cost:** 낮음. 14 로 내려갈 경우 `proxy.ts` 를 `middleware.ts` 로 rename 하면 됨.
+
+## ADR-009 · Vercel Hobby 플랜 호환 위해 **cron 을 hourly → daily (UTC 18:00 / KST 03:00)** 로 (2026-05-19)
+
+- **Context:** PRD §5.3 + `vercel.json` 원안은 `0 * * * *` (매시 정각) 으로 `/api/cron/expire-pending` 호출. Vercel Hobby (무료) 플랜은 **daily cron** 만 허용 — hourly 표현식이 들어간 배포는 Deploy 단계에서 거절되어 deployment row 가 생성조차 되지 않는다 (이 세션에서 실제로 마주친 증상: Deployments 가 텅 빈 채로 push 가 무시되는 듯 보임).
+- **Decision:** `vercel.json` 의 schedule 을 `"0 18 * * *"` 로 변경. UTC 18:00 = KST 03:00 (한국 신청자 가장 적은 시간 + 운영자 아침 출근 전 결과 확인 가능). Pro 플랜 업그레이드 시 hourly 로 복원.
+- **Why:** (1) **사용자 체감 영향 0**: `program_availability` 뷰가 `r.status = 'pending' AND r.expires_at > now()` 로 좌석을 실시간 필터하므로 cron 이 늦어도 만료된 pending 의 자리는 즉시 다른 신청자에게 열린다. cron 은 단순히 `status` 컬럼을 `cancelled` 로 정리하는 cleanup 일 뿐. (2) **운영자 체감 영향 제한적**: 관리자 화면 Registrations 의 status 표시가 최대 24h 지연될 뿐, `expires_at` 컬럼은 정확. (3) **비용 절감**: Hobby 로 launch 가능, 트래픽 보고 Pro 필요 시 업그레이드.
+- **Reversal cost:** 매우 낮음. `vercel.json` 한 줄 (`"0 18 * * *"` → `"0 * * * *"`) + Pro 플랜 결제 + redeploy. 데이터 마이그레이션 불필요.

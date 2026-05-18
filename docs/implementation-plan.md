@@ -5,7 +5,7 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 각 항목 옆 체크박스는 **구현 완료** 여부 — 코드가 들어가고 dev 환경에서 동작이 확인됐을 때만 체크.
 설계 결정의 *근거*는 [./decisions.md](./decisions.md), 변하지 않는 *요구사항*은 [./PRD.md](./PRD.md)를 본다.
 
-> **현재 상태 (2026-05-18 기준):** Phase 1A/1B/1C 전체 완료 + **Phase 1D 코드·문서 영역 모두 완료** (PRD §11 인수 기준 9/11 + 동시 신청 부하 테스트 통과, mobile/desktop viewport 확인, 정리 SQL 작성, 배포 가이드 [`docs/deploy.md`](./deploy.md) 작성). 남은 1D 항목은 모두 **운영자 결정/외부 시스템 작업**으로 deploy.md §0/§1/§3/§4 를 따라가면 끝남. 다음 진입점은 운영자와 함께 deploy.md 실행 (또는 Phase 2 자동화 시작).
+> **현재 상태 (2026-05-19 기준):** Phase 1A/1B/1C 전체 완료 + Phase 1D 코드·문서·**실배포 실행까지 완료**. Prod URL `stage-opera-humanitas.vercel.app` Ready, Supabase 운영 schema 에 migrations + cleanup 적용 완료, Vercel env 6 + cron(daily UTC 18:00) 등록, `@vercel/analytics` 마운트. 남은 항목: ⏳ §4-1 운영 계좌 입력 / §4-2 승인·취소 흐름 검증(OH-2026-0002 `pending` 으로 남아있음) / §4-3 cron 수동 호출 / §3-4 도메인 / §4-4 실기기 매트릭스 / 신규 backlog: confirmed→pending 복귀 기능 검토. 모두 launch 직전 또는 별도 세션에서 처리.
 
 ---
 
@@ -148,35 +148,59 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 | 10 | 모바일/PC 실기기 브라우저 매트릭스 (iPhone Safari, Android Chrome, Chrome PC, Safari PC) | ⏳ 운영자 검증 | Playwright 390×844/1440×900 viewport 만 확인 — 랜딩/신청/관리자 모두 레이아웃 OK |
 | 11 | 마지막 1석에 2건 동시 INSERT → 정확히 1건만 성공 | ✅ | Phase 1D Node burst test — A 201 / B 409 OH001 (`create_registration` RPC row-locking) |
 
-### D2. 배포 직전 정리 SQL  (✅ 작성 완료 / 커밋 TBD)
+### D2. 배포 직전 정리 SQL  (✅ 작성 완료 + 운영 실행 완료 / 커밋 `852aca7`)
 - [x] [`supabase/cleanup-pre-deploy.sql`](../supabase/cleanup-pre-deploy.sql) — `테스트신청자` row 삭제 + `admin_audit_log` truncate + `reference_no` 시퀀스 restart
 - [x] `supabase/migrations/README.md` 에 적용 안내 추가
-- [ ] **운영자 작업**: 운영 데이터 들어오기 전에 Supabase SQL Editor 에서 한 번만 실행
+- [x] **운영자 작업**: 운영 Supabase 에서 실행 완료 — 마지막 select 가 `0 / 0 / next seq=1` 반환 확인 (2026-05-18 세션, 운영 첫 신청은 의도된 대로 OH-2026-0002 부터 시작)
 
 ### D3. 운영자 결정 (PRD §10)
 배포 전 운영자가 직접 결정해 채워야 하는 항목들:
-- [ ] 실제 입금 계좌번호 → `/admin/settings` 에서 입력
-- [ ] 관리자 비밀번호 → Vercel env `ADMIN_PASSWORD` 로 운영 값 입력
-- [ ] 도메인 결정 (서브도메인 사용 여부 포함)
+- [ ] 실제 입금 계좌번호 → `/admin/settings` 에서 입력 *(launch 직전 작업으로 이연 — 현재 placeholder 노출 중)*
+- [x] 관리자 비밀번호 → Vercel env `ADMIN_PASSWORD` 로 운영 값 입력 (`openssl rand -base64 24` 생성본)
+- [ ] 도메인 결정 (서브도메인 사용 여부 포함) *(현재 `stage-opera-humanitas.vercel.app` 사용)*
 - [ ] 약관 문구 최종본 (변호사 검토) — 신청 폼 동의 영역 및 `/apply` 약관 모달
 - [ ] 환불 규정 세부 조건 (약관 확정 시)
 - [ ] 신청 페이지 메타 태그 / OG 이미지 (마케팅 시작 전)
 - [ ] 개인정보 처리방침 별도 페이지 필요 여부 (법적 검토 후)
 
 ### D4. Vercel 프로젝트 + 환경변수 + 도메인 (운영자 작업)
-- [ ] Vercel 에 GitHub repo 연결 + 첫 배포
-- [ ] 환경변수 입력 (운영 값으로 — `.env.example` 참조):
-  - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
-  - `ADMIN_PASSWORD`, `ADMIN_JWT_SECRET` (32자 이상 랜덤)
-  - `CRON_SECRET` (충분히 긴 랜덤)
-- [ ] 도메인 연결 + DNS 설정
-- [ ] Vercel Cron 활성화 확인 (`vercel.json` 자동 인식)
-- [ ] 운영 첫 신청 한 건 통과시켜 입금 안내 + cron 동작 모니터링
+- [x] Vercel 에 GitHub repo 연결 + 첫 배포 — `stage-opera-humanitas.vercel.app` Ready
+- [x] 환경변수 입력 — 6개 모두 Production 에 적용됨 (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_PASSWORD`, `ADMIN_JWT_SECRET`, `CRON_SECRET`)
+- [ ] 도메인 연결 + DNS 설정 *(이연)*
+- [x] Vercel Cron 활성화 확인 — `vercel.json` 자동 인식, schedule = `0 18 * * *` (UTC 18:00 / KST 03:00), Hobby 호환 (ADR-009)
+- [ ] 운영 첫 신청 한 건 통과시켜 입금 안내 + cron 동작 모니터링 *(§4-2 부분 진행: 신청 ✓ / 승인·취소 ⏳)*
 
-### D5. 배포 가이드 README  (✅ 작성 완료 / 커밋 TBD)
+### D5. 배포 가이드 README  (✅ 작성 완료 / 커밋 `38e5e70`)
 - [x] [`docs/deploy.md`](./deploy.md) — 운영자가 한 번에 따라가는 8개 섹션 (§0 결정 체크리스트 → §1 Supabase → §2 시크릿 생성 → §3 Vercel import + env vars + 도메인 → §4 운영 첫 검증 + cron 동작 확인 + §11-10 실기기 매트릭스 → §5 운영 모드 전환 → §6 트러블슈팅 → §7 운영 중 자주 쓰는 작업 → §8 Phase 2 진입 시 추가)
 - [x] `README.md` Docs 섹션에 deploy.md 와 migrations README 링크 추가
 - [x] `README.md` 의 stale 카피 정리 (`Phase 1B에 연결 예정` / `(예정) lib/` → 실제 src 트리)
+
+### D6. 운영 배포 실행 로그 (2026-05-18 ~ 05-19 세션, 커밋 `38e5e70` → `cf6b80c`)
+
+deploy.md 절차를 그대로 따라간 결과 + 진행 중 발생한 결정·이슈를 시간순으로 박제:
+
+- [x] **GitHub push** — origin/main 17 commits behind 였던 상태를 `38e5e70` 까지 동기화. `.env*` 트래킹 0건 사전 확인 완료
+- [x] **Supabase migrations 적용** — 0001/0002/0003/0004 + seed 모두 SQL Editor 에서 실행됨 (이전 세션에서 운영 프로젝트에 직접). Exposed schemas 에 `opera_humanitas` 등록 완료, API 키 3종 (URL/anon/service_role) 확보 완료
+- [x] **cleanup-pre-deploy.sql 운영 실행** — D2 참조. 검증 row + audit log 0건으로 비움
+- [x] **운영 시크릿 3종 생성** — `openssl rand -base64` 로 `ADMIN_PASSWORD` (24바이트) / `ADMIN_JWT_SECRET` / `CRON_SECRET` (각 48바이트) 신규 발급. dev 의 `.env.local` 값과 분리
+- [x] **Vercel 프로젝트 생성** — `minjabaek-coder/stage-opera-humanitas` import, Framework Preset Next.js 자동 인식, 첫 배포는 env 부재로 의도된 실패
+- [x] **환경변수 6개 입력** — Paste .env 방식으로 일괄 등록. `CRON_SECRET` 만 Production 한정, 나머지는 Production/Preview/Development
+- [x] **`@vercel/analytics` 통합** — `npm i @vercel/analytics` + `src/app/layout.tsx` 에 `<Analytics />` 마운트 (커밋 `ec65ffe`). [Next.js 16 App Router 공식 가이드](https://vercel.com/docs/analytics/quickstart) 기반
+- [x] **cron schedule 변경 — hourly → daily** (커밋 `cf6b80c`) — Vercel Hobby 플랜이 hourly 거부해서 deploy 자체가 생성되지 않던 문제 해결. `0 * * * *` → `0 18 * * *` (UTC 18:00 = KST 03:00). 좌석 카운트에는 영향 없음 (program_availability view 가 `expires_at` 실시간 필터). 상세 근거는 [ADR-009](./decisions.md)
+- [x] **Production deploy Ready** — `stage-opera-humanitas.vercel.app`. Smoke test: `/api/programs` 200 + 4건, `/` / `/apply` / `/admin` 모두 200
+- [x] **Vercel Cron Jobs 등록 확인** — Settings → Cron Jobs 에 `/api/cron/expire-pending` "At 06:00 PM" 표시. Next Run 시각 정상
+
+#### D6 잔여 (다음 세션 또는 launch 직전)
+
+- [ ] **§4-1 운영 계좌 입력** — 현재 `/apply/complete` 가 시드 placeholder (`신한은행 / 110-XXX-XXX-XXX / 박경준`) 노출 중. 운영 시작 전 `/admin/settings` 에서 교체 필수
+- [ ] **§4-2 승인·취소 흐름 마무리** — OH-2026-0002 가 운영 DB 에 `pending` 상태로 남아있음 (본인 검증 신청). 다음 세션에서 승인 → 취소 사이클로 정리하고 운영 DB 0건 상태로 되돌릴 것
+- [ ] **§4-3 cron 수동 호출 검증** — Vercel UI "Run now" 또는 curl + `CRON_SECRET` Bearer. 첫 호출은 `{expired_count:0}` 기대
+- [ ] **§3-4 커스텀 도메인 연결** — 현재 vercel.app 서브도메인. 운영자 도메인 결정 후 진행
+- [ ] **§4-4 실기기 매트릭스** — iPhone Safari / Android Chrome / Chrome PC / Safari PC
+
+#### D6 신규 발견 — backlog (별도 세션)
+
+- [ ] **상태 전이 일방향 제약 검토** — 현재 코드는 `confirmed → pending` 복귀 불가, `cancelled → *` 복귀 불가 (단방향). 운영 시 실수 승인 복구가 "취소 + 재신청" 으로만 가능. PRD 요구 vs. UX 비용 재검토 필요. 도입 시 영향: `POST /api/admin/registrations/[id]/revert` + UI 버튼 + admin_audit_log 액션 + 입금 안내 URL 재사용 부수효과 처리
 
 ---
 
