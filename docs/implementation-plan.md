@@ -5,6 +5,8 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 각 항목 옆 체크박스는 **구현 완료** 여부 — 코드가 들어가고 dev 환경에서 동작이 확인됐을 때만 체크.
 설계 결정의 *근거*는 [./decisions.md](./decisions.md), 변하지 않는 *요구사항*은 [./PRD.md](./PRD.md)를 본다.
 
+> **현재 상태 (2026-05-18 기준):** Phase 1A ✅, 1B ✅, **1C 부분 — C1 인증 ✅ + C3 관리자 API ✅** 까지 완료. 다음 진입점은 **§C2 관리자 UI** (`/admin/dashboard`, `/admin/registrations`, `/admin/settings`) → §C4 Vercel Cron.
+
 ---
 
 ## Phase 1A — 랜딩 페이지 (✅ 완료 / 커밋 `8988845`)
@@ -78,6 +80,8 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 - [x] `src/app/admin/page.tsx` + `AdminLoginClient.tsx` — 단일 비밀번호 입력 폼 (다크 톤, `noindex`)
 - [x] `globals.css` — `.admin-login__*` 디자인 토큰 기반 스타일
 
+> **운영 메모:** dev 검증을 위해 `.env.local` 에 임시값을 채워 둠 (`ADMIN_PASSWORD=dev-admin-2026`, 32자 이상 랜덤 `ADMIN_JWT_SECRET`). Phase 1D 배포 전 운영자가 정한 값으로 교체 필요. `.env.local` 자체는 gitignore.
+
 ### C2. 관리자 페이지 (PRD §3.5–3.7)
 - [ ] `/admin/dashboard` — 회차별 잔여 좌석, 입금 대기 카운트, 곧 만료 카운트
 - [ ] `/admin/registrations` — 필터·검색·페이지네이션 테이블 + 상세 모달
@@ -94,6 +98,8 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 - [x] `GET/PUT /api/admin/settings` — id=1 singleton 부분 업데이트 (PRD §5.2 는 PUT 만 명시 — UI 진입용 GET 자연 확장)
 - [x] `PUT /api/admin/programs/[id]` — 회차별 정원 (PRD §3.7 분리 저장 UI 와 정합). 현재 활성 좌석 미만으로 축소 금지.
 - [x] 모든 변경 액션은 `admin_audit_log` 기록
+
+> **검증 부수효과:** Playwright 검증 과정에서 `OH-2026-0001` (program=I, "테스트신청자") 이 `cancelled` 상태로 남았고, `admin_audit_log` 에 검증 액션 6건이 누적됐다. Phase 1D 배포 직전에 일괄 정리: `DELETE FROM opera_humanitas.registrations WHERE reference_no LIKE 'OH-2026-%' AND name = '테스트신청자';` + `TRUNCATE opera_humanitas.admin_audit_log;` (+ reference seq 리셋도 함께 고려).
 
 ### C4. Vercel Cron (PRD §5.3)
 - [ ] `POST /api/cron/expire-pending` — `Bearer ${CRON_SECRET}` 검증 + `expire_pending_registrations()` 호출
