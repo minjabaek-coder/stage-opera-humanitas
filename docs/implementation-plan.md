@@ -5,7 +5,7 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 각 항목 옆 체크박스는 **구현 완료** 여부 — 코드가 들어가고 dev 환경에서 동작이 확인됐을 때만 체크.
 설계 결정의 *근거*는 [./decisions.md](./decisions.md), 변하지 않는 *요구사항*은 [./PRD.md](./PRD.md)를 본다.
 
-> **현재 상태 (2026-05-18 기준):** Phase 1A ✅, 1B ✅, **1C 부분 — C1 인증 ✅ + C3 관리자 API ✅** 까지 완료. 다음 진입점은 **§C2 관리자 UI** (`/admin/dashboard`, `/admin/registrations`, `/admin/settings`) → §C4 Vercel Cron.
+> **현재 상태 (2026-05-18 기준):** Phase 1A ✅, 1B ✅, **1C 부분 — C1 인증 ✅ + C3 관리자 API ✅ + C2-1 대시보드 ✅** 까지 완료. 다음 진입점은 **§C2-2 `/admin/registrations`** → §C2-3 `/admin/settings` → §C4 Vercel Cron.
 
 ---
 
@@ -83,7 +83,11 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 > **운영 메모:** dev 검증을 위해 `.env.local` 에 임시값을 채워 둠 (`ADMIN_PASSWORD=dev-admin-2026`, 32자 이상 랜덤 `ADMIN_JWT_SECRET`). Phase 1D 배포 전 운영자가 정한 값으로 교체 필요. `.env.local` 자체는 gitignore.
 
 ### C2. 관리자 페이지 (PRD §3.5–3.7)
-- [ ] `/admin/dashboard` — 회차별 잔여 좌석, 입금 대기 카운트, 곧 만료 카운트
+- [x] `/admin/dashboard` — 회차별 잔여 좌석, 입금 대기 카운트, 곧 만료 카운트 (커밋 `55dcafc`)
+  - Route group `src/app/admin/(authed)/` 도입 — 로그인 페이지(`/admin`)는 shell 밖, 인증된 3개 페이지는 공통 shell(헤더 + nav + 로그아웃) 공유
+  - 데이터 헬퍼 `src/lib/admin/dashboard.ts` 의 `getDashboardData()` 를 페이지(서버 컴포넌트)와 `/api/admin/dashboard` 양쪽에서 재사용 → API fetch 라운드트립 생략
+  - KPI 3장(pending / 6h 내 만료 / 총 잔여 좌석) + 회차 4장 카드(확정/대기 비율 막대)
+  - 클라이언트 `RefreshButton` (`router.refresh()` + 트랜지션 토스트), `AdminLogoutButton`, `AdminNav` (usePathname 활성 표시)
 - [ ] `/admin/registrations` — 필터·검색·페이지네이션 테이블 + 상세 모달
 - [ ] `/admin/settings` — 계좌/홀드 시간/회차 정원 편집
 
