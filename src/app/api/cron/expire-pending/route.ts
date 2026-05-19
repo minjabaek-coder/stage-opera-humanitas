@@ -56,5 +56,8 @@ export async function GET(request: Request) {
 
   // 함수가 scalar integer 를 반환 → supabase-js 는 그대로 number 로 받아온다.
   const expired_count = typeof data === "number" ? data : 0;
+  // Vercel Logs → Runtime Logs 에서 매 호출 결과를 확인할 수 있도록 박제.
+  // (Function 로그는 status/duration 만 남고 응답 body 는 안 남기므로 별도 필요.)
+  console.log(`[cron/expire-pending] expired_count=${expired_count}`);
   return NextResponse.json({ expired_count });
 }
