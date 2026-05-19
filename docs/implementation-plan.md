@@ -5,7 +5,7 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 각 항목 옆 체크박스는 **구현 완료** 여부 — 코드가 들어가고 dev 환경에서 동작이 확인됐을 때만 체크.
 설계 결정의 *근거*는 [./decisions.md](./decisions.md), 변하지 않는 *요구사항*은 [./PRD.md](./PRD.md)를 본다.
 
-> **현재 상태 (2026-05-19 기준):** Phase 1A/1B/1C 전체 완료 + Phase 1D 코드·문서·**실배포 실행까지 완료**. Prod URL `stage-opera-humanitas.vercel.app` Ready, Supabase 운영 schema 에 migrations(0005 포함) + cleanup 적용 완료, Vercel env 6 + cron(daily UTC 18:00) 등록·동작 확인, `@vercel/analytics` 마운트. **상태 전이 양방향화 완료 — `confirmed/cancelled → pending` 복귀 기능 (migration 0005 + revert API + UI), cron POST→GET 메서드 fix + Runtime Logs 관측 추가**. 남은 항목: ⏳ §4-1 운영 계좌 입력 / §3-4 도메인 / §4-4 실기기 매트릭스. 모두 launch 직전 또는 별도 세션에서 처리. (§4-2 검증 흐름은 OH-2026-0003 으로 sweep 완료, §4-3 cron 수동 호출은 완료. OH-2026-0002 는 의도적으로 pending 유지 — 정리 불필요.)
+> **현재 상태 (2026-05-19 기준):** Phase 1A/1B/1C 전체 완료 + Phase 1D 코드·문서·**실배포 실행까지 완료**. Prod URL `stage-opera-humanitas.vercel.app` Ready, Supabase 운영 schema 에 migrations(0005 포함) + cleanup 적용 완료, Vercel env 6 + cron(daily UTC 18:00) 등록·동작 확인, `@vercel/analytics` 마운트. **상태 전이 양방향화 완료 — `confirmed/cancelled → pending` 복귀 기능 (migration 0005 + revert API + UI), cron POST→GET 메서드 fix + Runtime Logs 관측 추가, §4-4 자동 검증으로 발견된 UI/UX 이슈 3종 fix (hydration mismatch / 모바일 가로 overflow / 모바일 tap target)**. 남은 항목: ⏳ §4-1 운영 계좌 입력 / §3-4 도메인 / §4-4 실기기 매트릭스(자동화 부분 완료, 실기기는 운영자). 모두 launch 직전 또는 별도 세션에서 처리. (§4-2 검증 흐름은 OH-2026-0003 으로 sweep 완료, §4-3 cron 수동 호출은 완료. OH-2026-0002 는 의도적으로 pending 유지 — 정리 불필요.)
 
 ---
 
@@ -145,7 +145,7 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 | 7 | 관리자 승인 → confirmed + 잔여 좌석 반영 | ✅ | Phase 1C C2-2 |
 | 8 | 관리자 취소 → 좌석 회복 | ✅ | Phase 1C C2-2 |
 | 9 | 잘못된 비밀번호 → 접근 불가 | ✅ | Phase 1C C1 |
-| 10 | 모바일/PC 실기기 브라우저 매트릭스 (iPhone Safari, Android Chrome, Chrome PC, Safari PC) | ⏳ 운영자 검증 | Playwright 390×844/1440×900 viewport 만 확인 — 랜딩/신청/관리자 모두 레이아웃 OK |
+| 10 | 모바일/PC 실기기 브라우저 매트릭스 (iPhone Safari, Android Chrome, Chrome PC, Safari PC) | 🟡 자동화 부분 완료 / 실기기 ⏳ 운영자 검증 | dev-uiux 브랜치에서 Playwright MCP 로 390×844 + 1440×900 × 7 페이지 스캔(2026-05-19) → 발견된 3종 fix 머지 완료 (`0134f15`). 실기기 터치/폰트/Web Audio 검증은 운영자 직접 |
 | 11 | 마지막 1석에 2건 동시 INSERT → 정확히 1건만 성공 | ✅ | Phase 1D Node burst test — A 201 / B 409 OH001 (`create_registration` RPC row-locking) |
 
 ### D2. 배포 직전 정리 SQL  (✅ 작성 완료 + 운영 실행 완료 / 커밋 `852aca7`)
@@ -196,7 +196,11 @@ deploy.md 절차를 그대로 따라간 결과 + 진행 중 발생한 결정·�
 - [ ] **§4-2 승인·취소 흐름 마무리** — OH-2026-0002 가 운영 DB 에 `pending` 상태로 남아있음 (본인 검증 신청). 다음 세션에서 승인 → 취소 사이클로 정리하고 운영 DB 0건 상태로 되돌릴 것
 - [x] **§4-3 cron 수동 호출 검증** (2026-05-19 완료) — Vercel UI Run now 첫 시도에서 405 발견 → POST→GET 수정 (커밋 `bb2b42b`) → 재시도 200 OK. Runtime Logs 확인을 위해 `console.log` 추가 (커밋 `90fd075`) → 재시도에서 `[cron/expire-pending] expired_count=0` 로깅 확인. OH-2026-0002 가 만료(KST 2026-05-21 00:53) 전이라 0 이 정답. 모레 KST 03:00 cron 이 첫 실제 만료 처리 예정
 - [ ] **§3-4 커스텀 도메인 연결** — 현재 vercel.app 서브도메인. 운영자 도메인 결정 후 진행
-- [ ] **§4-4 실기기 매트릭스** — iPhone Safari / Android Chrome / Chrome PC / Safari PC
+- [🟡] **§4-4 실기기 매트릭스** — 자동화 부분 완료 (2026-05-19 dev-uiux → main, 커밋 `0134f15`). Playwright MCP 로 모바일(390×844) + 데스크탑(1440×900) × 7 페이지 스캔하여 발견된 이슈 3종 fix:
+  - `ca1a5fd` — hydration mismatch 해결: ko-KR locale 의 `Intl.DateTimeFormat({hour12:false})` 가 hourCycle 을 h24 로 fallback (자정 "24:00") → 서버/클라이언트 출력 불일치. `hourCycle:"h23"` 명시로 5개 인스턴스 정리 (RegistrationsClient / dashboard / apply-complete / admin export). `/admin/registrations` 콘솔 에러 0 확인
+  - `5ab5d0b` — 모바일 가로 overflow 해결: `html,body { overflow-x: hidden }` 가드 + `.intro__mark` font-size clamp min 을 48→32px 로 축소 (390 viewport 에서 "OPERA HUMANITAS" 가 426px 폭이라 좌우 18px 씩 잘리던 문제). 데스크탑(700px+) 영향 없음 검증
+  - `a225698` — `/apply` 모바일 tap target 3종 ≥44px: `.apply__brand` (141×22→141×55), `.apply__back` (82×19→114×52), 약관 `<summary>` (316×22→316×46). 체크박스는 wrapping label 이 이미 충분히 커서 패스
+  - **잔여 (운영자)**: iPhone Safari / Android Chrome / Chrome PC / Safari PC 실기기 검증 — 자동화로는 잡을 수 없는 dynamic viewport, 터치 inertia, 폰트 렌더링, Web Audio autoplay 정책 등
 
 #### D6 신규 발견 — backlog (별도 세션)
 
