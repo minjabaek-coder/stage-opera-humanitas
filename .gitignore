@@ -45,3 +45,7 @@ next-env.d.ts
 
 # playwright mcp local snapshots/logs from browser testing
 .playwright-mcp/
+
+# Playwright MCP 가 screenshot 을 프로젝트 루트에 떨어뜨려서 임시 스캔 결과가 git status 에
+# 잡힌다. 루트의 PNG 는 모두 ephemeral 검증 산출물이라 commit 금지.
+/*.png

@@ -45,7 +45,8 @@ const KST = new Intl.DateTimeFormat("ko-KR", {
   day: "2-digit",
   hour: "2-digit",
   minute: "2-digit",
-  hour12: false,
+  // ko-KR + hour12:false 는 hourCycle 을 h24 로 override (자정=24:00). hourCycle:"h23" 만 명시.
+  hourCycle: "h23",
 });
 
 function fmtKst(iso: string | null): string {

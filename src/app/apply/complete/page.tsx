@@ -109,7 +109,9 @@ function formatKstDateLong(iso: string): string {
     weekday: "short",
     hour: "2-digit",
     minute: "2-digit",
-    hour12: false,
+    // hour12:false 는 ko-KR 에서 hourCycle 을 h24 로 override 해버려 자정이 "24:00"
+    // 출력 → 서버/클라이언트 불일치 (hydration mismatch). hourCycle:"h23" 만 명시.
+    hourCycle: "h23",
   });
   // Intl 출력은 "2026. 06. 20. (토) 15:00" — 점공백 패턴을 점으로 정리
   return fmt.format(d).replace(/\.\s/g, ".").replace(/\.$/, "");
