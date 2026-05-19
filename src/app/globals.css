@@ -1085,6 +1085,11 @@ section.band--paper .band__head .kr { color: var(--ink-paper-dim); }
   font-size: 18px;
   letter-spacing: 0.04em;
   color: var(--ink);
+  /* 모바일 터치 타겟 ≥44px 보장: inline-block + 수직 패딩으로 클릭 영역 확대.
+     시각적으로는 nav 의 padding 안에 들어가 위치 변화 없음. */
+  display: inline-block;
+  padding: 12px 0;
+  margin: -12px 0;
 }
 
 .apply__header {
@@ -1392,6 +1397,9 @@ section.band--paper .band__head .kr { color: var(--ink-paper-dim); }
   cursor: pointer;
   color: var(--accent);
   margin-bottom: 8px;
+  /* 모바일 터치 타겟 ≥44px 보장. */
+  padding: 12px 0;
+  margin-top: -12px;
 }
 .apply__consent-details ul { margin: 6px 0 0; padding-left: 18px; }
 .apply__consent-details li { margin: 2px 0; }
@@ -1438,6 +1446,9 @@ section.band--paper .band__head .kr { color: var(--ink-paper-dim); }
   font-style: italic;
   color: var(--ink-dim);
   letter-spacing: 0.04em;
+  /* 모바일 터치 타겟 ≥44px 보장. */
+  display: inline-block;
+  padding: 13px 16px;
 }
 .apply__back:hover { color: var(--accent); }
 
