@@ -2,9 +2,13 @@ import { NextResponse } from "next/server";
 
 import { getServiceClient } from "@/lib/supabase/server";
 
-// PRD §5.3 — Vercel Cron 이 1시간마다 호출.
+// PRD §5.3 — Vercel Cron 호출 (현재 daily KST 03:00, ADR-009).
 // Authorization: Bearer ${CRON_SECRET} 검증 후 opera_humanitas.expire_pending_registrations() 실행.
 // 함수는 만료된 pending 을 cancelled('expired') 로 일괄 전환하고 row_count 를 반환한다.
+//
+// HTTP 메서드는 GET — Vercel Cron 은 항상 GET 으로 트리거한다
+// (https://vercel.com/docs/cron-jobs). PRD §5.3 는 POST 로 기술되어 있지만 Vercel
+// 구현과 어긋나서 405 가 떨어진다. 수동 호출도 GET 으로 통일.
 //
 // proxy.ts 의 matcher 는 /api/admin/* 만 가드하므로 이 라우트는 Bearer 검증으로 자체 보호한다.
 
@@ -18,7 +22,7 @@ function unauthorized() {
   );
 }
 
-export async function POST(request: Request) {
+export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret) {
     console.error("[cron/expire-pending] CRON_SECRET 미설정");

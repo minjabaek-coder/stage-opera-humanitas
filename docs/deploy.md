@@ -162,10 +162,10 @@ DNS 전파 후 Vercel 이 자동으로 Let's Encrypt 인증서 발급. 보통 5~
 `/api/cron/expire-pending` 호출 로그가 남는지 확인. 응답이 `{ expired_count: N }` (보통 0)
 이면 정상.
 
-수동으로 한 번 호출해 확인하려면:
+수동으로 한 번 호출해 확인하려면 (Vercel Cron 은 GET 으로 트리거 — 수동도 GET):
 
 ```bash
-curl -X POST https://<도메인>/api/cron/expire-pending \
+curl https://<도메인>/api/cron/expire-pending \
   -H "Authorization: Bearer <CRON_SECRET>"
 # → {"expired_count": 0}  (만료 대상 없을 때)
 ```
@@ -220,6 +220,7 @@ issue 에 첨부.
 | 작업 | 위치 |
 |---|---|
 | 입금 확인 → 승인 | `/admin/registrations` 행 클릭 → **승인** |
+| 실수 승인 / 취소 철회 복구 | `/admin/registrations` 행 클릭 → **임시예약으로 복귀** (status가 confirmed/cancelled 일 때만 노출) |
 | 환불·관리자 취소 | `/admin/registrations` 행 클릭 → **취소** + 사유 입력 |
 | 회차 정원 조정 | `/admin/settings` → 회차별 정원. 활성 좌석 이하로는 축소 불가 |
 | 계좌번호 변경 | `/admin/settings` → 입금 정보 |

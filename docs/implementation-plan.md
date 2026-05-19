@@ -122,8 +122,8 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 > - 0005: 1D 동시 신청 부하 테스트 승자
 > - 0006: 1D SOLD OUT 표시 검증
 
-### C4. Vercel Cron (PRD §5.3)  (✅ 완료 / 커밋 `94d63fe`)
-- [x] `POST /api/cron/expire-pending` — `Bearer ${CRON_SECRET}` timing-safe 검증 + `expire_pending_registrations()` RPC 호출. CRON_SECRET 미설정 시 500 fail-loud
+### C4. Vercel Cron (PRD §5.3)  (✅ 완료 / 커밋 `94d63fe` + 메서드 수정 fix)
+- [x] `GET /api/cron/expire-pending` — `Bearer ${CRON_SECRET}` timing-safe 검증 + `expire_pending_registrations()` RPC 호출. CRON_SECRET 미설정 시 500 fail-loud. **PRD §5.3 는 POST 로 기술되어 있으나 Vercel Cron 은 항상 GET 으로 트리거하므로 GET 으로 통일** (Vercel 공식 docs: "To trigger a cron job, Vercel makes an HTTP GET request"). 초기 POST 구현은 §D6 §4-3 수동 호출에서 405 로 발견 → 본 세션에서 수정
 - [x] `vercel.json` cron schedule `0 * * * *`
 - [x] **부수 fix**: `RegistrationsClient` 의 status badge 가 `cancel_reason === 'expired'` (PG 함수가 실제로 박는 literal) 을 만료로 분류하도록 수정. 이전 로직(`startsWith('system:')`)으로는 cron 으로 만료된 row 가 "취소 (관리자)" 로 잘못 표시됐다
 - [x] `.env.local` 에 CRON_SECRET dev placeholder 추가 (gitignored). Phase 1D 배포 전 운영자가 정한 값으로 교체 필요
