@@ -62,13 +62,17 @@ function STATUS_KO(status: string): string {
   }
 }
 
+// ko-KR locale 에서 hour12:false 만 주면 hourCycle 이 h24 로 fallback 되어 자정이 "24:00"
+// 으로 출력된다. 그런데 브라우저는 hourCycle:"h23" 명시를 존중하고 Node 는 hour12:false 가
+// hourCycle 을 override 해서 같은 옵션 셋이 서버/클라이언트 다른 결과 → hydration mismatch.
+// 해결: hour12 제거 + hourCycle:"h23" 만 둔다. hourCycle 이 곧 h12 여부를 함의.
 const KST_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
   timeZone: "Asia/Seoul",
   month: "2-digit",
   day: "2-digit",
   hour: "2-digit",
   minute: "2-digit",
-  hour12: false,
+  hourCycle: "h23",
 });
 
 const KST_FULL_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
@@ -78,7 +82,7 @@ const KST_FULL_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
   day: "2-digit",
   hour: "2-digit",
   minute: "2-digit",
-  hour12: false,
+  hourCycle: "h23",
 });
 
 function fmtShort(iso: string | null): string {
