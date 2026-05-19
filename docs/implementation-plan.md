@@ -5,7 +5,7 @@ PRD([./PRD.md](./PRD.md)) Phase 1 MVP을 작업 가능한 단위로 쪼개고, �
 각 항목 옆 체크박스는 **구현 완료** 여부 — 코드가 들어가고 dev 환경에서 동작이 확인됐을 때만 체크.
 설계 결정의 *근거*는 [./decisions.md](./decisions.md), 변하지 않는 *요구사항*은 [./PRD.md](./PRD.md)를 본다.
 
-> **현재 상태 (2026-05-19 기준):** Phase 1A/1B/1C 전체 완료 + Phase 1D 코드·문서·**실배포 실행까지 완료**. Prod URL `stage-opera-humanitas.vercel.app` Ready, Supabase 운영 schema 에 migrations + cleanup 적용 완료, Vercel env 6 + cron(daily UTC 18:00) 등록, `@vercel/analytics` 마운트. **신규: 상태 전이 양방향화 — `confirmed/cancelled → pending` 복귀 기능 추가 (migration 0005 + revert API + UI)**. 남은 항목: ⏳ §4-1 운영 계좌 입력 / §4-2 승인·취소·복귀 흐름 검증(OH-2026-0002 `pending` 으로 남아있음) / §4-3 cron 수동 호출 / §3-4 도메인 / §4-4 실기기 매트릭스 / 운영 Supabase 에 0005 migration 적용. 모두 launch 직전 또는 별도 세션에서 처리.
+> **현재 상태 (2026-05-19 기준):** Phase 1A/1B/1C 전체 완료 + Phase 1D 코드·문서·**실배포 실행까지 완료**. Prod URL `stage-opera-humanitas.vercel.app` Ready, Supabase 운영 schema 에 migrations(0005 포함) + cleanup 적용 완료, Vercel env 6 + cron(daily UTC 18:00) 등록·동작 확인, `@vercel/analytics` 마운트. **상태 전이 양방향화 완료 — `confirmed/cancelled → pending` 복귀 기능 (migration 0005 + revert API + UI), cron POST→GET 메서드 fix + Runtime Logs 관측 추가**. 남은 항목: ⏳ §4-1 운영 계좌 입력 / §3-4 도메인 / §4-4 실기기 매트릭스. 모두 launch 직전 또는 별도 세션에서 처리. (§4-2 검증 흐름은 OH-2026-0003 으로 sweep 완료, §4-3 cron 수동 호출은 완료. OH-2026-0002 는 의도적으로 pending 유지 — 정리 불필요.)
 
 ---
 
@@ -194,7 +194,7 @@ deploy.md 절차를 그대로 따라간 결과 + 진행 중 발생한 결정·�
 
 - [ ] **§4-1 운영 계좌 입력** — 현재 `/apply/complete` 가 시드 placeholder (`신한은행 / 110-XXX-XXX-XXX / 박경준`) 노출 중. 운영 시작 전 `/admin/settings` 에서 교체 필수
 - [ ] **§4-2 승인·취소 흐름 마무리** — OH-2026-0002 가 운영 DB 에 `pending` 상태로 남아있음 (본인 검증 신청). 다음 세션에서 승인 → 취소 사이클로 정리하고 운영 DB 0건 상태로 되돌릴 것
-- [ ] **§4-3 cron 수동 호출 검증** — Vercel UI "Run now" 또는 curl + `CRON_SECRET` Bearer. 첫 호출은 `{expired_count:0}` 기대
+- [x] **§4-3 cron 수동 호출 검증** (2026-05-19 완료) — Vercel UI Run now 첫 시도에서 405 발견 → POST→GET 수정 (커밋 `bb2b42b`) → 재시도 200 OK. Runtime Logs 확인을 위해 `console.log` 추가 (커밋 `90fd075`) → 재시도에서 `[cron/expire-pending] expired_count=0` 로깅 확인. OH-2026-0002 가 만료(KST 2026-05-21 00:53) 전이라 0 이 정답. 모레 KST 03:00 cron 이 첫 실제 만료 처리 예정
 - [ ] **§3-4 커스텀 도메인 연결** — 현재 vercel.app 서브도메인. 운영자 도메인 결정 후 진행
 - [ ] **§4-4 실기기 매트릭스** — iPhone Safari / Android Chrome / Chrome PC / Safari PC
 
