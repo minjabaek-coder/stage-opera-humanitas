@@ -65,6 +65,10 @@ html[data-latin="off"] .intro__lat { display: none; }
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+/* 모바일에서 sub-pixel rounding 이나 viewport unit (100vw) 로 1-20px 가로 overflow 가
+   생기는 경우 가로 스크롤이 활성화되어 UX 가 깨진다. 의도된 가로 스크롤이 없는
+   사이트라 body 레벨에서 일괄 차단. (overflow-y 는 영향 없음) */
+html, body { overflow-x: hidden; }
 
 body {
   font-family: var(--font-serif-kr);
@@ -1022,7 +1026,10 @@ section.band--paper .band__head .kr { color: var(--ink-paper-dim); }
 .intro__mark {
   font-family: var(--font-serif-latin);
   font-style: italic;
-  font-size: clamp(48px, 8vw, 120px);
+  /* clamp min 을 32 로 낮춤 — 기존 48 은 390px viewport 에서 "OPERA HUMANITAS"
+     가로 폭이 426px 가 되어 좌우 18px 씩 잘렸음. 32 이면 ~280px 로 여유 있음.
+     데스크탑(8vw 가 적용되는 700px+)에서는 차이 없음. */
+  font-size: clamp(32px, 8vw, 120px);
   color: var(--ink);
   letter-spacing: 0.04em;
   overflow: hidden;
