@@ -20,7 +20,7 @@ export function Info() {
           <div className="info__item">
             <dt>Fee</dt>
             <dd>
-              회차당 ₩30,000
+              회차당 ₩100,000
               <small>Per Session · KRW</small>
             </dd>
           </div>
